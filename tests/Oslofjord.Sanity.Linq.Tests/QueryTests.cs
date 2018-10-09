@@ -119,7 +119,7 @@ namespace Oslofjord.Sanity.Linq.Tests
 
             // LINQ Query
             var count = (sanity.DocumentSet<Post>().Count());
-            var query = sanity.DocumentSet<Post>().Include(p => p.Author).Where(p => p.PublishedAt >= DateTime.Today).GetSanityQuery();
+            var query = sanity.DocumentSet<Post>().Include(p => p.Author).Where(p => p.PublishedAt >= DateTime.Today);
 
             // Execute Query
             var results = await query.ToListAsync();
@@ -130,8 +130,6 @@ namespace Oslofjord.Sanity.Linq.Tests
             Assert.True(results.Count > 0);
             Assert.NotNull(results[0].Author?.Value);
             Assert.Equal("Joe Bloggs", results[0].Author.Value.Name);
-
-
         }
     }
 }
