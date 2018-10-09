@@ -1,4 +1,22 @@
-﻿using Newtonsoft.Json;
+﻿// Copywrite 2018 Oslofjord Operations AS
+
+// This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
+
+//  Sanity LINQ is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+//  GNU General Public License for more details.
+
+//  You should have received a copy of the GNU General Public License
+//  along with this program.If not, see<https://www.gnu.org/licenses/>.
+
+
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Oslofjord.Sanity.Linq.CommonTypes;
 using Oslofjord.Sanity.Linq.DTOs;
@@ -52,7 +70,7 @@ namespace Oslofjord.Sanity.Linq
             {
                 _httpQueryClient.BaseAddress = new Uri($"https://{WebUtility.UrlEncode(_options.ProjectId)}.api.sanity.io/v1/");
             }
-            if (!string.IsNullOrEmpty(_options.Token))
+            if (!string.IsNullOrEmpty(_options.Token) && !_options.UseCdn)
             {
                 _httpQueryClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.Token);
             }
@@ -87,8 +105,24 @@ namespace Oslofjord.Sanity.Linq
                 Query = query,
                 Params = parameters
             };
-            var json = new StringContent(JsonConvert.SerializeObject(oQuery, Formatting.None, SerializerSettings), Encoding.UTF8, "application/json");
-            var response = await _httpQueryClient.PostAsync($"data/query/{WebUtility.UrlEncode(_options.Dataset)}", json).ConfigureAwait(false);
+            HttpResponseMessage response = null;
+            if (_options.UseCdn)
+            {
+                // CDN only supports GET requests
+                var url = $"data/query/{WebUtility.UrlEncode(_options.Dataset)}?query={WebUtility.UrlEncode(query ?? "")}";
+                if (parameters != null)
+                {
+                    //TODO: Add support for parameters
+                }
+                response = await _httpQueryClient.GetAsync(url);
+            }
+            else
+            {
+                // Preferred method is POST
+                var json = new StringContent(JsonConvert.SerializeObject(oQuery, Formatting.None, SerializerSettings), Encoding.UTF8, "application/json");
+                response = await _httpQueryClient.PostAsync($"data/query/{WebUtility.UrlEncode(_options.Dataset)}", json).ConfigureAwait(false);
+            }
+
             return await HandleHttpResponseAsync<SanityQueryResponse<TResult>>(response).ConfigureAwait(false);
         }
 

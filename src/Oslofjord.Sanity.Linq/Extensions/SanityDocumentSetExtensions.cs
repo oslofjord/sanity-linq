@@ -32,6 +32,29 @@ namespace Oslofjord.Sanity.Linq
 {
     public static class SanityDocumentSetExtensions
     {
+        /// <summary>
+        /// Returns Sanity GROQ query for the expression. 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static string GetSanityQuery<T>(this IQueryable<T> source)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            if (source is SanityDocumentSet<T> dbSet && dbSet.Provider is SanityQueryProvider)
+            {
+                return ((SanityQueryProvider)dbSet.Provider).GetSanityQuery<T>(source.Expression);
+            }
+            else
+            {
+                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+            }
+        }
+
         public static async Task<List<T>> ToListAsync<T>(this IQueryable<T> source)
         {
             if (source == null)

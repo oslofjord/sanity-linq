@@ -72,10 +72,15 @@ namespace Oslofjord.Sanity.Linq
             return ExecuteAsync<TResult>(expression).Result;            
         }
 
-        public async Task<TResult> ExecuteAsync<TResult>(Expression expression)
+        public string GetSanityQuery<TResult>(Expression expression)
         {
             var parser = new SanityExpressionParser(expression, DocType, typeof(TResult));
-            var query = parser.BuildQuery();            
+            return parser.BuildQuery();
+        }
+
+        public async Task<TResult> ExecuteAsync<TResult>(Expression expression)
+        {
+            var query = GetSanityQuery<TResult>(expression);          
 
             // Execute query
             var result = await Context.Client.FetchAsync<TResult>(query).ConfigureAwait(false);

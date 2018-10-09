@@ -213,6 +213,7 @@ namespace Oslofjord.Sanity.Linq
                         {
                             throw new Exception("Where expressions are only supported on the root type.");
                         }
+                        Visit(e.Arguments[0]);
 
                         //Arg 1: Query / lambda
                         if (e.Arguments[1] is UnaryExpression u && u.Operand is LambdaExpression l)

@@ -31,7 +31,7 @@ namespace Oslofjord.Sanity.Linq.CommonTypes
         }
 
         [JsonProperty("_id")]
-        public string SanityId { get; set; }
+        public string Id { get; set; }
 
         [JsonProperty("_type")]
         public string SanityType { get; set; }

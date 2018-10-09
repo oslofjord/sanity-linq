@@ -16,6 +16,7 @@
 //  along with this program.If not, see<https://www.gnu.org/licenses/>.
 
 using Newtonsoft.Json;
+using Oslofjord.Sanity.Linq.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -26,6 +27,7 @@ namespace Oslofjord.Sanity.Linq.CommonTypes
     {
         public SanityObject()
         {
+            SanityType = GetType().GetSanityTypeName();
             SanityKey = Guid.NewGuid().ToString();
         }
 

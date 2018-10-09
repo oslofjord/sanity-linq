@@ -13,4 +13,9 @@
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\demo\Oslofjord.Sanity.Linq.Demo\Oslofjord.Sanity.Linq.Demo.csproj" />
+    <ProjectReference Include="..\..\src\Oslofjord.Sanity.Linq\Oslofjord.Sanity.Linq.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -69,10 +69,11 @@ namespace Oslofjord.Sanity.Linq
                 // Alternatively, get reference from Id on nested Value
                 if (string.IsNullOrEmpty(valRef))
                 {
-                    var valValue = type.GetProperty("Value");
-                    if (valValue != null)
+                    var propValue = type.GetProperty("Value");
+                    var valValue = propValue.GetValue(value);
+                    if (propValue != null)
                     {
-                        var valType = value.GetType();
+                        var valType = propValue.PropertyType;
                         var idProp = valType.GetProperties().FirstOrDefault(p => p.Name.ToLower() == "_id" || ((p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName?.Equals("_id")).GetValueOrDefault());
                         if (idProp != null)
                         {
