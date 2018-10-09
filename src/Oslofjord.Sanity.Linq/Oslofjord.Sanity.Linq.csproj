@@ -26,7 +26,7 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
     <Authors>Reng van Oord</Authors>
     <Company>Oslofjord Operations AS</Company>
     <Product>Sanity LINQ</Product>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Description>Strongly-typed .Net Client for Sanity CMS (https://sanity.io)</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Copyright>2018 Oslofjord Operations AS</Copyright>
