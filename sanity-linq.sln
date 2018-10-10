@@ -5,9 +5,16 @@ VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oslofjord.Sanity.Linq", "src\Oslofjord.Sanity.Linq\Oslofjord.Sanity.Linq.csproj", "{89789E24-C819-4D63-8B3C-71B560555208}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Oslofjord.Sanity.Linq.Demo", "demo\Oslofjord.Sanity.Linq.Demo\Oslofjord.Sanity.Linq.Demo.csproj", "{9A92925B-7550-476B-8A5E-4D068F3A98CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oslofjord.Sanity.Linq.Demo", "demo\Oslofjord.Sanity.Linq.Demo\Oslofjord.Sanity.Linq.Demo.csproj", "{9A92925B-7550-476B-8A5E-4D068F3A98CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Oslofjord.Sanity.Linq.Tests", "tests\Oslofjord.Sanity.Linq.Tests\Oslofjord.Sanity.Linq.Tests.csproj", "{8E43F31C-30FD-4B31-8656-AA3A0FCEFCD0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oslofjord.Sanity.Linq.Tests", "tests\Oslofjord.Sanity.Linq.Tests\Oslofjord.Sanity.Linq.Tests.csproj", "{8E43F31C-30FD-4B31-8656-AA3A0FCEFCD0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{167A03E7-CC50-447A-8CEF-26CDE1141A1A}"
+	ProjectSection(SolutionItems) = preProject
+		CONTRIBUTERS.md = CONTRIBUTERS.md
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
