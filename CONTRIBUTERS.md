@@ -11,7 +11,6 @@ their names indented and be marked with a '-'
 #### Project Contributers
 
 * Oslofjord Operations AS
-  - Reng van Oord
 
 #### Other Credits
 

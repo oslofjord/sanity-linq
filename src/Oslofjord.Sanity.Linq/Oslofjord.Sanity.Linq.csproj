@@ -23,7 +23,7 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Reng van Oord</Authors>
+    <Authors>Oslofjord Operations AS</Authors>
     <Company>Oslofjord Operations AS</Company>
     <Product>Sanity LINQ</Product>
     <Version>1.0.1</Version>
