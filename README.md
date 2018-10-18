@@ -304,7 +304,7 @@ Feel free to submit pull-requests to the Sanity LINQ project!
 
 ### Licence
 
-[GNU General Public License v3.0](https://raw.githubusercontent.com/oslofjord/sanity-linq/master/LICENSE)
+The Sanity LINQ is available under the [MIT Licence](https://github.com/oslofjord/sanity-linq/blob/master/LICENSE)
 
 **Licence Summary**
 
