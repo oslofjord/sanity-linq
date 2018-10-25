@@ -33,7 +33,7 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
     <PackageProjectUrl>https://github.com/oslofjord/sanity-linq</PackageProjectUrl>
     <RepositoryUrl>https://github.com/oslofjord/sanity-linq</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>sanity cms dotnet linq</PackageTags>
+    <PackageTags>sanity cms dotnet linq client groq</PackageTags>
     <PackageLicenseUrl>https://raw.githubusercontent.com/oslofjord/sanity-linq/master/LICENSE</PackageLicenseUrl>
     <AssemblyVersion>1.0.2.0</AssemblyVersion>
   </PropertyGroup>
