@@ -1,5 +1,7 @@
 # Sanity LINQ
  **A strongly-typed .Net Client** for [Sanity CMS](https://sanity.io) with support for LINQ queries, mutations, transactions, joins, projections and more...
+ 
+[![Build status](https://oslofjord.visualstudio.com/sanity-linq/_apis/build/status/Build%20sanity-linq)](https://oslofjord.visualstudio.com/sanity-linq/_build/latest?definitionId=118)
 
 
 ## Introduction
