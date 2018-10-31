@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Sanity.Linq.BlockContent.BlockTypes;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Sanity.Linq.CommonTypes
+namespace Sanity.Linq.CommonTypes.BlockTypes
 {
     public class SanityBlock : SanityObject
     {
@@ -16,6 +17,6 @@ namespace Sanity.Linq.CommonTypes
 
         public object[] Children { get; set; } = new object[] { };
 
-
+        public SanityImage Asset { get; set; } = new SanityImage { };
     }
 }
