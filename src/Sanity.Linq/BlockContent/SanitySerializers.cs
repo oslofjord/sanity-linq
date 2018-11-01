@@ -9,7 +9,7 @@ namespace Sanity.Linq.BlockContent
     {
         public SanitySerializers()
         {
-
+            
         }
 
 
@@ -122,27 +122,13 @@ namespace Sanity.Linq.BlockContent
         public string SerializeImage(JToken input, SanityOptions options)
         {
             var imageRef = (string)input["asset"]["_ref"];
-            var parameters = "?";
+            var parameters = "";
 
-            //if (input["crop"] != null && input["hotspot"] != null)
-            //{
-            //    parameters += crop = focalpoint & fp - x = 0.3 & fp - y = 0.2 & h = 200 & w = 300 & fit = crop
-            //}
-
-            //if (input["alt"] != null)
-            //{
-            //    alt = (string)input["alt"];
-            //}
-            //if(alt.StartsWith("?"))
-            //{
-            //    parameters = true;
-            //}
-
-            //if (input["crop"] != null)
-            //{
-
-            //}
-
+            if (input["query"] != null)
+            {
+                parameters = "?";
+                parameters += (string)input["query"];
+            }
 
             //build url
             var imageParts = imageRef.Split('-');

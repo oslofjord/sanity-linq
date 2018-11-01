@@ -1,3 +1,28 @@
+export default {
+  name: 'blockContent',
+  title: 'Content',
+  type: 'array',
+  of: [{
+    type: 'block'
+   },
+   {
+    type: 'image',
+    options: {
+     hotspot: true
+    },
+    fields: [{
+     type: 'text',
+     name: 'query',
+     title: 'Query',
+     description: `Image url query.`,
+     options: {
+      isHighlighted: true
+     }
+    }]
+   }
+  ]
+ }
+
 // export default {
 //   title: 'Block Content',
 //   name: 'blockContent',
@@ -39,30 +64,4 @@
 //       options: {hotspot: true}
 //     }
 //   ]
-// }
-
-export default {
-  name: 'blockContent',
-  title: 'Content',
-  type: 'array',
-  of: [
-  {
-  type: 'block'
-  },
-  {
-  type: 'image',
-  options: {hotspot: true},
-  fields: [
-      {
-      type: 'text',
-      name: 'alt',
-      title: 'Alternative text',
-      description: `For visually impaired`,
-      options: {
-        isHighlighted: true
-      }
-      }
-  ]
-  }
-  ]
-  }
+// } 
