@@ -17,12 +17,12 @@ namespace Sanity.Linq.Demo.Model
 
         public SanityReference<Author> Author { get; set; }
 
-        public SanityImage MainImage { get; set; }
+        public CommonTypes.SanityImage MainImage { get; set; }
 
         public List<SanityReference<Category>> Categories { get; set; }
 
         public DateTimeOffset? PublishedAt { get; set; }
 
-        public SanityBlock[] Body { get; set; }
+        public object Body { get; set; }
     }
 }

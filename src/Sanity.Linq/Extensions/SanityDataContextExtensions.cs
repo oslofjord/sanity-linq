@@ -15,25 +15,26 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.If not, see<https://www.gnu.org/licenses/>.
 
-using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Sanity.Linq.CommonTypes;
+using Sanity.Linq.DTOs;
+using Sanity.Linq.Internal;
+using Sanity.Linq.Mutations;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace Sanity.Linq.CommonTypes
+namespace Sanity.Linq
 {
-    public class SanityImage : SanityObject
+    public static class SanityDataContextExtensions
     {
-        public SanityImage() : base()
+        public static void AddHtmlSerializer(this SanityDataContext sanity, string type, Func<JToken, SanityOptions,Task<string>> serializer)
         {
-            SanityType = "image";
+            sanity.HtmlBuilder.AddSerializer(type, serializer);
         }
 
-        public SanityReference<SanityImageAsset> Asset { get; set; }
-
-        public SanityImageCrop Crop { get; set; }
-
-        public SanityImageHotspot Hotspot { get; set; }
     }
 }

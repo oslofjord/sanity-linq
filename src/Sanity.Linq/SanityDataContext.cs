@@ -31,6 +31,7 @@ using Newtonsoft.Json.Serialization;
 using Sanity.Linq.DTOs;
 using Sanity.Linq.CommonTypes;
 using Sanity.Linq.Mutations;
+using Sanity.Linq.BlockContent;
 
 namespace Sanity.Linq
 {
@@ -52,6 +53,8 @@ namespace Sanity.Linq
 
         public JsonSerializerSettings SerializerSettings { get; }
 
+        public SanityHtmlBuilder HtmlBuilder { get; set; }
+
         /// <summary>
         /// Create a new SanityDbContext using the specified options.
         /// </summary>
@@ -71,6 +74,7 @@ namespace Sanity.Linq
             };
             Client = new SanityClient(options, serializerSettings);
             Mutations = new SanityMutationBuilder(Client);
+            HtmlBuilder = new SanityHtmlBuilder(options, null, SerializerSettings);
         }
 
        

@@ -11,21 +11,13 @@ namespace Sanity.Linq.Tests
 
     public class QueryTests : TestBase
     {
-
-
         [Fact]
         public async Task CRUD_Test()
         {
 
             var sanity = new SanityDataContext(Options);
 
-            // Clear existing records in single transaction
-            sanity.DocumentSet<Post>().Delete();
-            sanity.DocumentSet<Author>().Delete();
-            sanity.DocumentSet<Category>().Delete();
-            await sanity.CommitAsync();
-
-
+            await ClearAllDataAsync(sanity);
 
             // Create new category
             var categories = sanity.DocumentSet<Category>();
