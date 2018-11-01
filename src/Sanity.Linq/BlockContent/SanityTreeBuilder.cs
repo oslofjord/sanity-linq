@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Sanity.Linq.BlockContent
 {
-    public class ThreeBuilder
+    public class SanityTreeBuilder
     {
         public JArray Build(JArray blockArray)
         {

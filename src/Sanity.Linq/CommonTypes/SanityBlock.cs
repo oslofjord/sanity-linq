@@ -1,9 +1,8 @@
-﻿using Sanity.Linq.BlockContent.BlockTypes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Sanity.Linq.CommonTypes.BlockTypes
+namespace Sanity.Linq.CommonTypes
 {
     public class SanityBlock : SanityObject
     {

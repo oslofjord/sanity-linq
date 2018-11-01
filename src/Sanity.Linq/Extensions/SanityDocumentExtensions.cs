@@ -17,12 +17,14 @@
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Sanity.Linq.BlockContent;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Sanity.Linq.Extensions
 {
@@ -275,6 +277,27 @@ namespace Sanity.Linq.Extensions
                 _updatedAtPropertyCache[type] = revProperty;
             }
             return _updatedAtPropertyCache[type];
+        }
+
+
+        public static Task<string> ToHtmlAsync(this object blockContent, SanityHtmlBuilder builder)
+        {
+            return builder.BuildAsync(blockContent);
+        }
+
+        public static string ToHtml(this object blockContent, SanityHtmlBuilder builder)
+        {
+            return builder.BuildAsync(blockContent).Result;
+        }
+
+        public static Task<string> ToHtmlAsync(this object blockContent, SanityDataContext context)
+        {
+            return context.HtmlBuilder.BuildAsync(blockContent);
+        }
+
+        public static string ToHtml(this object blockContent, SanityDataContext context)
+        {
+            return context.HtmlBuilder.BuildAsync(blockContent).Result;
         }
     }
 }

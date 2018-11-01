@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json.Linq;
 using Sanity.Linq.BlockContent;
+using Sanity.Linq.CommonTypes;
 using Sanity.Linq.Demo.Model;
+using Sanity.Linq.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,56 +13,90 @@ namespace Sanity.Linq.Tests
 {
     public class BlockConvertTest : TestBase
     {
-        HtmlBuilder htmlBuilder;
-
         [Fact]
         public async Task ConvertTest()
         {
+            // this test tries to serialize the Body-element of a Post-document from the Sanity demo-dataset.
+
             var sanity = new SanityDataContext(Options);
             var posts = await sanity.DocumentSet<Post>().ToListAsync();
-            var htmlBuilder = new HtmlBuilder(Options);
+            var htmlBuilder = new SanityHtmlBuilder(Options);
             foreach (var post in posts)
             {
-                var html = htmlBuilder.Build(post.Body);
+                var html = htmlBuilder.BuildAsync(post.Body); // the serialized data
             }
         }
 
 
+        [Fact]
+        public async Task BlockContent_Extensions_Test()
+        {
 
-        //public Dictionary<string, Func<string, string>> customSerializers()
-        //{
-        //    var serializers = new Dictionary<string, Func<TType, string>>()
-        //      {
-        //        {
-        //            "author",
-        //            delegate (string author) {
-        //                return "<div>" + author['attributes']['name'] + "</div>";
-        //            }
-        //        },
-        //          {
-        //            "block",
-        //            delegate (bool value) {
-        //                return value;
-        //            } }
-        //      };
+            var sanity = new SanityDataContext(Options);
 
-        //    return serializers;
-        //}
-        //}
+            // Clear existing records in single transaction
+            await ClearAllDataAsync(sanity);
 
-        //class GenericFuncDictionary<T> : Dictionary<string, Func<T, string>>
-        //{
-        //    public void returnValues()
-        //    {
-        //        foreach (Func<T> fun in this.Values)
-        //            Console.WriteLine(fun());
-        //    }
+            // Uplooad image
+            var imageUri = new Uri("https://www.sanity.io/static/images/opengraph/social.png");
+            var image = (await sanity.Images.UploadAsync(imageUri)).Document;
 
-        //    public string returnAuthor()
-        //    {
-        //        if (T == Array)
-        //        return "<div>" + author['attributes']['name'] + "</div>";
-        //    }
-        //}
+            // Create post
+            var post = new Post
+            {
+                MainImage = new SanityImage
+                {
+                    Asset = new SanityReference<SanityImageAsset> { Ref = image.Id },
+                },
+
+                Body = new SanityObject[]
+                {
+                    new SanityBlock
+                    {
+                        Children = new []
+                        {
+                            new SanitySpan
+                            {
+                                Text = "A bold start!",
+                                Marks = new[] { "strong" }
+                            }
+                        }
+                    },
+                    new SanityBlock
+                    {
+                        Children = new []
+                        {
+                            new SanitySpan
+                            {
+                                Text = "With a great article..."
+                            }
+                        }
+                    },
+                     new SanityImage
+                    {
+                        Asset = new SanityReference<SanityImageAsset> { Ref = image.Id },
+                    }
+                }
+            };
+            var result = (await sanity.DocumentSet<Post>().Create(post).CommitAsync()).Results[0].Document;
+
+            // Serialize block content
+            var html = await result.Body.ToHtmlAsync(sanity);
+
+            // Serialize single object
+            var imageTag = await result.MainImage.ToHtmlAsync(sanity);
+
+
+            Assert.NotNull(html);
+            Assert.True(html.IndexOf("<strong>A bold start!</strong>") != -1);
+            Assert.True(html.IndexOf("<img") != -1);
+            Assert.True(html.IndexOf(image.AssetId) != -1);
+
+            Assert.True(imageTag.IndexOf("<img") != -1);
+            Assert.True(imageTag.IndexOf(image.AssetId) != -1);
+
+
+
+        }
     }
 }
