@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json.Linq;
-using Sanity.Linq.BlockContent.Serializers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +10,7 @@ namespace Sanity.Linq.BlockContent
     {
         SanityOptions _options;
         public Dictionary<string, Func<JToken, SanityOptions, string>> Serializers { get; } = new Dictionary<string, Func<JToken, SanityOptions, string>>();
+        ThreeBuilder threeBuilder = new ThreeBuilder();
 
         public HtmlBuilder(SanityOptions options)
         {
@@ -30,103 +30,10 @@ namespace Sanity.Linq.BlockContent
 
             var blockArray = content as JArray;
 
-            // set list trees / listItem = bullet | number && level != null
-            var currentListType = "";
-            for (int i = 0; i < blockArray.Count - 1; i++)
-            {
-                JObject item = (JObject)blockArray[i];
+            //build listitems (if any)
+            blockArray = threeBuilder.Build(blockArray);
 
-                if ((string)blockArray[i]["listItem"] == "bullet")
-                {
-                    //check if first 
-                    if (currentListType == "")
-                    {
-                        item.Add(new JProperty("firstItem", true));
-                    }
-
-                    //check if last of same list type
-                    if (currentListType == "bullet")
-                    {
-                        if (blockArray[i + 1] != null)
-                        {
-                            if ((string)blockArray[i + 1]["listItem"] == "" || (string)blockArray[i + 1]["listItem"] == "number")
-                            {
-                                item.Add(new JProperty("lastItem", true));
-                            }
-                        }
-                    }
-
-                    //check if last in array
-                    if (blockArray[i + 1] != null)
-                    {
-                        //check if next is in same list
-                        if ((string)blockArray[i + 1]["listItem"] == "bullet")
-                        {
-                            //continue on same list
-                            currentListType = "bullet";
-                        }
-                        else
-                        {
-                            //end list
-                            if (blockArray[i]["lastItem"] == null)
-                            {
-                                item.Add(new JProperty("lastItem", true));
-                            }
-                            currentListType = "";
-                        }
-                    }
-                    else
-                    {
-                        currentListType = "";
-                    }
-
-                }
-                else if ((string)blockArray[i]["listItem"] == "number")
-                {
-                    //check if first 
-                    if (currentListType == "")
-                    {
-                        item.Add(new JProperty("firstItem", true));
-                    }
-
-                    //check if last
-                    if (currentListType == "number")
-                    {
-                        if(blockArray[i + 1] != null)
-                        {
-                            if ((string)blockArray[i + 1]["listItem"] == "" || (string)blockArray[i + 1]["listItem"] == "bullet")
-                            {
-                                item.Add(new JProperty("lastItem", true));
-                            }
-                        }
-                    }
-                    //check if last in array
-                    if (blockArray[i + 1] != null)
-                    {
-                        //check if next is in same list
-                        if ((string)blockArray[i + 1]["listItem"] == "number")
-                        {
-                            //continue on same list
-                            currentListType = "number";
-                        }
-                        else
-                        {
-                            //end list
-                            //item.Add(new JProperty("lastItem", true));
-                            if (blockArray[i]["lastItem"] == null)
-                            {
-                                item.Add(new JProperty("lastItem", true));
-                            }
-                            currentListType = "";
-                        }
-                    }
-                    else
-                    {
-                        currentListType = "";
-                    }
-                }
-            }
-
+            //serialize each block with their respective serializers
             foreach (var block in blockArray)
             {
                 html += Serialize(block);
@@ -161,8 +68,5 @@ namespace Sanity.Linq.BlockContent
             Serializers.Add("block", serializers.SerializeDefaultBlock);
             Serializers.Add("image", serializers.SerializeImage);
         }
-
-
-
     }
 }

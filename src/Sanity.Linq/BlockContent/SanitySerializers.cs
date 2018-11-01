@@ -7,13 +7,7 @@ namespace Sanity.Linq.BlockContent
 {
     public class SanitySerializers
     {
-        public SanitySerializers()
-        {
-            
-        }
-
-
-        // Serializers
+        // Sanity Default Serializers
         public string SerializeDefaultBlock(JToken input, SanityOptions sanity)
         {
             var text = "";
