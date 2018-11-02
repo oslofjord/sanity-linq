@@ -18,7 +18,7 @@ namespace Sanity.Linq.BlockContent
         public JsonSerializerSettings SerializerSettings { get; }
 
 
-        public SanityHtmlBuilder(SanityOptions options, Dictionary<string,Func<JToken, SanityOptions,Task<string>>> customSerializers = null, JsonSerializerSettings serializerSettings = null)
+        public SanityHtmlBuilder(SanityOptions options, Dictionary<string,Func<JToken,SanityOptions,Task<string>>> customSerializers = null, JsonSerializerSettings serializerSettings = null)
         {
             _options = options;
             SerializerSettings = serializerSettings ?? new JsonSerializerSettings

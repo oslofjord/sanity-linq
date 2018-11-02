@@ -26,12 +26,14 @@ namespace Sanity.Linq.Tests
                 var html = htmlBuilder.BuildAsync(post.Body); // the serialized data
             }
         }
-
+        public Task<string> CustomSerializer(JToken jtoken)
+        {
+            return Task.FromResult("");
+        }
 
         [Fact]
         public async Task BlockContent_Extensions_Test()
         {
-
             var sanity = new SanityDataContext(Options);
 
             // Clear existing records in single transaction
@@ -86,17 +88,15 @@ namespace Sanity.Linq.Tests
             // Serialize single object
             var imageTag = await result.MainImage.ToHtmlAsync(sanity);
 
-
+            //test whole content
             Assert.NotNull(html);
             Assert.True(html.IndexOf("<strong>A bold start!</strong>") != -1);
             Assert.True(html.IndexOf("<img") != -1);
             Assert.True(html.IndexOf(image.AssetId) != -1);
 
+            //test image
             Assert.True(imageTag.IndexOf("<img") != -1);
             Assert.True(imageTag.IndexOf(image.AssetId) != -1);
-
-
-
         }
     }
 }

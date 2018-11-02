@@ -298,6 +298,37 @@ The `SanityClient` class can be used for making "raw" GROQ requests to Sanity:
 var client = new SanityClient(options);
 await result = await client.FetchAsync("*[_type == "post"]");
 ```
+
+### 9. Rendering Block Content / Custom Content
+When you use the block editor in Sanity, it produces a structured array structure that you can use to render the content on any platform you might want. We have provided a class which can help you serialize your content to HTML, or whatever you want with custom serializers. We can distinct which serializer to use by checking for which "_type"-type on the SanityObject is set.
+ `SanityHtmlBuilder` can be used in different ways:
+```csharp
+//from SanityDataContext
+var sanity = new SanityDataContext(Options);
+var result = sanity.HtmlBuilder.BuildAsync(_content);
+// or
+var myHtmlBuilder = new SanityHtmlBuilder(Options);
+```
+You can also add your custom serializers to the `SanityHtmlBuilder`
+
+```csharp
+sanity.HtmlBuilder.AddSerializer("myCustomSerializer", CustomSerializer);
+// or
+sanity.AddHtmlSerializer("myCustomSerializer", CustomSerializer);
+// or 
+myHtmlBuilder.AddSerializer("myCustomSerializer", CustomSerializer);
+```
+
+To render content there are a few different ways:
+```csharp
+//This will check if the "_type"-object has a serializer in the HtmlBuilder.Serializers dictionary and use it to return html.
+var html = htmlBuilder.BuildAsync(post.Body);
+...
+//strongly typed object
+var result = (await sanity.DocumentSet<Post>().Create(post).CommitAsync()).Results[0].Document;
+var html = await result.Body.ToHtmlAsync(sanity); // the whole content
+var imageTag = await result.MainImage.ToHtmlAsync(sanity); // just a single block
+```
 -------
 
 ## Contribute

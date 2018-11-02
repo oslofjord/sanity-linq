@@ -12,11 +12,11 @@ namespace Sanity.Linq.BlockContent
         // Sanity Default Serializers
         public Task<string> SerializeDefaultBlockAsync(JToken input, SanityOptions sanity)
         {
-            var text = "";
-            var listStart = "";
-            var listEnd = "";
-            var listItemStart = "";
-            var listItemEnd = "";
+            var text = new StringBuilder();
+            var listStart = new StringBuilder();
+            var listEnd = new StringBuilder();
+            var listItemStart = new StringBuilder();
+            var listItemEnd = new StringBuilder();
 
             var text2 = new StringBuilder();
             
@@ -29,6 +29,7 @@ namespace Sanity.Linq.BlockContent
             }
             else 
             {
+                //default to span
                 tag = input["style"]?.ToString() ?? "span";
             }
 
@@ -39,61 +40,61 @@ namespace Sanity.Linq.BlockContent
 
             if (input["listItem"]?.ToString() == "bullet")
             {
-                listItemEnd += "</li>";
+                listItemEnd.Append("</li>");
                 // unordered <ul>
                 for (var i = 0; i < ((int?)input["level"]).GetValueOrDefault(0) - 1; i++)
                 {
-                    listItemStart += "<ul>";
-                    listItemEnd += "</ul>";
+                    listItemStart.Append("<ul>");
+                    listItemEnd.Append("</ul>");
                 }
-                listItemStart += "<li>";
+                listItemStart.Append("<li>");
 
                 //check if first or last in list
                 if (input["firstItem"] != null)
                 {
                     if ((bool)input["firstItem"] == true)
                     {
-                        listStart = "<ul>";
+                        listStart.Equals("<ul>");
                     }
                 }
                 if (input["lastItem"] != null)
                 {
                     if ((bool)input["lastItem"] == true)
                     {
-                        listEnd = "</ul>";
+                        listEnd.Equals("</ul>");
                     }
                 }
             }
 
             if (input["listItem"]?.ToString() == "number")
             {
-                listItemEnd += "</li>";
+                listItemEnd.Append("</li>");
                 // ordered <ol>
                 for (var i = 0; i < ((int?)input["level"]).GetValueOrDefault(0) - 1; i++)
                 {
-                    listItemStart += "<ol>";
-                    listItemEnd += "</ol>";
+                    listItemStart.Append("<ol>");
+                    listItemEnd.Append("</ol>");
                 }
-                listItemStart += "<li>";
+                listItemStart.Append("<li>");
 
                 //check if first or last in list
                 if (((bool?)input["firstItem"]) == true)
                 {
-                    listStart = "<ol>";
+                    listStart.Equals("<ol>");
                 }
                 if (((bool?)input["lastItem"]) == true)
                 {
-                    listEnd = "</ol>";
+                    listEnd.Equals("</ol>");
                 }
             }
 
             // iterate through children and apply marks and add to text
             foreach (var child in input["children"])
             {
-                var start = "";
-                var end = "";
+                var start = new StringBuilder();
+                var end = new StringBuilder();
 
-                if(child["marks"] != null && child["marks"].HasValues)
+                if (child["marks"] != null && child["marks"].HasValues)
                 {
                     foreach (var mark in child["marks"])
                     {
@@ -103,8 +104,8 @@ namespace Sanity.Linq.BlockContent
                         {
                             if (markDef["_type"]?.ToString() == "link")
                             {
-                                start += @"<a href=""" + markDef["href"]?.ToString() + @""">";
-                                end += "</a>";
+                                start.Append($"<a href=\"{markDef["href"]?.ToString()}\">");
+                                end.Append( "</a>");
                             }
                             else
                             {
@@ -114,14 +115,14 @@ namespace Sanity.Linq.BlockContent
                         else
                         {
                             // Default
-                            start += "<" + mark + ">";
-                            end += "</" + mark + ">";
+                            start.Append($"<{mark}>");
+                            end.Append($"</{mark}>");
                         }
                         
                     }
                 }
 
-                text += start + child["text"] + end;
+                text.Append(start.ToString() + child["text"] + end.ToString());
             }
 
             return Task.FromResult($"{listStart}{listItemStart}<{tag}>{text}</{tag}>{listItemEnd}{listEnd}");
@@ -142,22 +143,22 @@ namespace Sanity.Linq.BlockContent
 
             if (input["query"] != null)
             {
-                parameters = "?";
-                parameters += (string)input["query"];
+                parameters.Equals($"?{(string)input["query"]}");
             }
 
             //build url
             var imageParts = imageRef.Split('-');
-            var url = "https://cdn.sanity.io/";
-                url += imageParts[0]     + "s/";            // images/
-                url += options.ProjectId + "/";             // projectid/
-                url += options.Dataset   + "/";             // dataset/
-                url += imageParts[1]     + "-";             // asset id-
-                url += imageParts[2]     + ".";             // dimensions.
-                url += imageParts[3];                       // file extension
-                url += parameters;                          // ?crop etc..
+            var url = new StringBuilder();
+                url.Append("https://cdn.sanity.io/");
+                url.Append(imageParts[0]     + "s/");            // images/
+                url.Append(options.ProjectId + "/");             // projectid/
+                url.Append(options.Dataset   + "/");             // dataset/
+                url.Append(imageParts[1]     + "-");             // asset id-
+                url.Append(imageParts[2]     + ".");             // dimensions.
+                url.Append(imageParts[3]);                       // file extension
+                url.Append(parameters);                          // ?crop etc..
                 
-            return Task.FromResult(@"<figure><img src=""" + url + @""" /></figure>");
+            return Task.FromResult($"<figure><img src=\"{url}\"/></figure>");
         }
     }
 }
