@@ -54,14 +54,14 @@ namespace Sanity.Linq.BlockContent
                 {
                     if ((bool)input["firstItem"] == true)
                     {
-                        listStart.Equals("<ul>");
+                        listStart.Append("<ul>");
                     }
                 }
                 if (input["lastItem"] != null)
                 {
                     if ((bool)input["lastItem"] == true)
                     {
-                        listEnd.Equals("</ul>");
+                        listEnd.Append("</ul>");
                     }
                 }
             }
@@ -80,11 +80,11 @@ namespace Sanity.Linq.BlockContent
                 //check if first or last in list
                 if (((bool?)input["firstItem"]) == true)
                 {
-                    listStart.Equals("<ol>");
+                    listStart.Append("<ol>");
                 }
                 if (((bool?)input["lastItem"]) == true)
                 {
-                    listEnd.Equals("</ol>");
+                    listEnd.Append("</ol>");
                 }
             }
 
@@ -139,11 +139,11 @@ namespace Sanity.Linq.BlockContent
                 return Task.FromResult("");
             }
 
-            var parameters = "";
+            var parameters = new StringBuilder();
 
             if (input["query"] != null)
             {
-                parameters.Equals($"?{(string)input["query"]}");
+                parameters.Append($"?{(string)input["query"]}");
             }
 
             //build url
@@ -156,7 +156,7 @@ namespace Sanity.Linq.BlockContent
                 url.Append(imageParts[1]     + "-");             // asset id-
                 url.Append(imageParts[2]     + ".");             // dimensions.
                 url.Append(imageParts[3]);                       // file extension
-                url.Append(parameters);                          // ?crop etc..
+                url.Append(parameters.ToString());                          // ?crop etc..
                 
             return Task.FromResult($"<figure><img src=\"{url}\"/></figure>");
         }

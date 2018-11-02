@@ -26,10 +26,6 @@ namespace Sanity.Linq.Tests
                 var html = htmlBuilder.BuildAsync(post.Body); // the serialized data
             }
         }
-        public Task<string> CustomSerializer(JToken jtoken)
-        {
-            return Task.FromResult("");
-        }
 
         [Fact]
         public async Task BlockContent_Extensions_Test()

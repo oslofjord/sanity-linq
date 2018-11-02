@@ -105,6 +105,7 @@ namespace Sanity.Linq.BlockContent
                     }
                 }
             }
+
             return blockArray;
         }
     }
