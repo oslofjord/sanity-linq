@@ -104,7 +104,7 @@ namespace Sanity.Linq.BlockContent
                         {
                             if (markDef["_type"]?.ToString() == "link")
                             {
-                                start.Append($"<a href=\"{markDef["href"]?.ToString()}\">");
+                                start.Append($"<a target=\"_blank\" href=\"{markDef["href"]?.ToString()}\">");
                                 end.Append( "</a>");
                             }
                             else
