@@ -321,11 +321,11 @@ var result = await post.Body.ToHtmlAsync(sanity);
 You can also add your custom serializers to the `SanityHtmlBuilder`
 
 ```csharp
-sanity.HtmlBuilder.AddSerializer("myCustomSerializer", CustomSerializer);
+sanity.HtmlBuilder.AddSerializer("myType", MySerializerFn);
 // or
-sanity.AddHtmlSerializer("myCustomSerializer", CustomSerializer);
+sanity.AddHtmlSerializer("myType", MySerializerFn);
 // or 
-builder.AddSerializer("myCustomSerializer", CustomSerializer);
+builder.AddSerializer("myType", MySerializerFn);
 ```
 
 The HTML builder supports serializing BlockContent arrays as well as single fields (such as an image field):
