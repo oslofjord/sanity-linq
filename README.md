@@ -299,15 +299,24 @@ var client = new SanityClient(options);
 await result = await client.FetchAsync("*[_type == "post"]");
 ```
 
-### 9. Rendering Block Content / Custom Content
-When you use the block editor in Sanity, it produces a structured array structure that you can use to render the content on any platform you might want. We have provided a class which can help you serialize your content to HTML, or whatever you want with custom serializers. We can distinct which serializer to use by checking for which "_type"-type on the SanityObject is set.
- `SanityHtmlBuilder` can be used in different ways:
+### 9. Rendering Block Content
+When you use the block editor in Sanity, it produces a structured array structure that you can use to render the content on any platform you might want. We have provided a class which can help you serialize your content to HTML, or potentially other formats using custom serializers. The `SanityHTmlBuilder` class has several inbuilt serializers, and new serializers can be added for custom Sanity types.
+
+ `SanityHtmlBuilder` can be accessed in several different ways:
 ```csharp
-//from SanityDataContext
+// Create a stand-alone instance:
+var builder = new SanityHtmlBuilder(Options);
+var html = await builder.BuildAsync(myBlockContent); //Block content can be a string, JObject or POCO
+
+// Access via existing SanityContext:
 var sanity = new SanityDataContext(Options);
-var result = sanity.HtmlBuilder.BuildAsync(_content);
-// or
-var myHtmlBuilder = new SanityHtmlBuilder(Options);
+var post = await sanity.DocumentSet<Post>().FirstOrDefault();
+var result = await sanity.HtmlBuilder.BuildAsync(post.Body);
+
+// Use extension method directly on document (using Sanity.Linq.Extensions)
+var sanity = new SanityDataContext(Options);
+var post = await sanity.DocumentSet<Post>().FirstOrDefault();
+var result = await post.Body.ToHtmlAsync(sanity);
 ```
 You can also add your custom serializers to the `SanityHtmlBuilder`
 
@@ -316,18 +325,17 @@ sanity.HtmlBuilder.AddSerializer("myCustomSerializer", CustomSerializer);
 // or
 sanity.AddHtmlSerializer("myCustomSerializer", CustomSerializer);
 // or 
-myHtmlBuilder.AddSerializer("myCustomSerializer", CustomSerializer);
+builder.AddSerializer("myCustomSerializer", CustomSerializer);
 ```
 
-To render content there are a few different ways:
+The HTML builder supports serializing BlockContent arrays as well as single fields (such as an image field):
 ```csharp
-//This will check if the "_type"-object has a serializer in the HtmlBuilder.Serializers dictionary and use it to return html.
-var html = htmlBuilder.BuildAsync(post.Body);
+//This will check if the "_type" of the Body field has a serializer in the HtmlBuilder.Serializers dictionary and use it to return html.
+var html = await htmlBuilder.BuildAsync(post.Body);
 ...
 //strongly typed object
-var result = (await sanity.DocumentSet<Post>().Create(post).CommitAsync()).Results[0].Document;
-var html = await result.Body.ToHtmlAsync(sanity); // the whole content
-var imageTag = await result.MainImage.ToHtmlAsync(sanity); // just a single block
+var html = await post.Body.ToHtmlAsync(sanity); // the whole content
+var imageTag = await post.MainImage.ToHtmlAsync(sanity); // just a single block
 ```
 -------
 
