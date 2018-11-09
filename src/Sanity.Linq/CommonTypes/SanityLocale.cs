@@ -52,7 +52,26 @@ namespace Sanity.Linq.CommonTypes
 
         public T Get(string languageCode)
         {
-            return this.ContainsKey(languageCode) && this[languageCode] is JObject ? ((JObject)this[languageCode]).ToObject<T>() : default(T);
+            if (this.ContainsKey(languageCode))
+            {
+                if (this[languageCode] is JObject)
+                {
+                    return ((JObject)this[languageCode]).ToObject<T>();
+                }
+                else
+                {
+                    var sVal = this[languageCode]?.ToString();
+                    if (sVal != null && typeof(T) == typeof(string))
+                    {
+                        return (T)(object)sVal;
+                    }
+                    return sVal != null ? (T)Convert.ChangeType(sVal, typeof(T)) : default(T);
+                }
+            }
+            else
+            {
+                return default(T);
+            }
         }
 
         public void Set(string languageCode, T value)

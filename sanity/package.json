@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "package.json",
-  "author": "rvanoord <rvanoord@allmail.net>",
+  "author": "Oslofjord Operations AS",
   "license": "UNLICENSED",
   "scripts": {
     "start": "sanity start",

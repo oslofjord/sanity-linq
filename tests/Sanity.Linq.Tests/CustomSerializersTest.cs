@@ -9,17 +9,17 @@ namespace Sanity.Linq.Tests
     public class CustomSerializersTest : TestBase
     {
 
-        [Fact]
-        public async Task SerializeToBootstrapTable()
-        {
+        //[Fact]
+        //public async Task SerializeToBootstrapTable()
+        //{
 
-            //get document from sanity
-            //build
-            //set marks
-            //return html
+        //    //get document from sanity
+        //    //build
+        //    //set marks
+        //    //return html
 
 
-        }
+        //}
 
 
     }
