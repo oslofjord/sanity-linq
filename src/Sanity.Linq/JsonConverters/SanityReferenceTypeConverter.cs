@@ -71,7 +71,7 @@ namespace Sanity.Linq
                 {
                     var propValue = type.GetProperty("Value");
                     var valValue = propValue.GetValue(value);
-                    if (propValue != null)
+                    if (propValue != null && valValue != null)
                     {
                         var valType = propValue.PropertyType;
                         var idProp = valType.GetProperties().FirstOrDefault(p => p.Name.ToLower() == "_id" || ((p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName?.Equals("_id")).GetValueOrDefault());
