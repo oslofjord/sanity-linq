@@ -45,7 +45,7 @@ namespace Sanity.Linq.CommonTypes
 
         public IReadOnlyDictionary<string, T> Translations => this.Where(kv => kv.Key != "_type").ToDictionary(kv => kv.Key, kv => {
             if (kv.Value == null) return default(T);
-            if (kv.Value.GetType() == typeof(T)) return (T)kv.Value;
+            if (kv.Value is T) return (T)kv.Value;
             if (kv.Value is JObject) return ((JObject)kv.Value).ToObject<T>();
             return default(T);
         });
