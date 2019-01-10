@@ -11,96 +11,58 @@ namespace Sanity.Linq.BlockContent
         {
             // set list trees / listItem = bullet | number && level != null
             var currentListType = "";
-            for (int i = 0; i < blockArray.Count - 1; i++)
+            for (int i = 0; i < blockArray.Count; i++)
             {
                 JObject item = (JObject)blockArray[i];
 
                 if ((string)blockArray[i]["listItem"] == "bullet")
                 {
-                    //check if first 
+                    //check if first in bullet array
                     if (currentListType == "")
                     {
                         item.Add(new JProperty("firstItem", true));
                     }
 
-                    //check if last of same list type
-                    if (currentListType == "bullet")
+                    currentListType = "bullet";
+
+                    // check if last in array, also last in bullet array 
+                    if (blockArray.Count == i+1)
                     {
-                        if (blockArray[i + 1] != null)
-                        {
-                            if ((string)blockArray[i + 1]["listItem"] == "" || (string)blockArray[i + 1]["listItem"] == "number")
-                            {
-                                item.Add(new JProperty("lastItem", true));
-                            }
-                        }
+                        item.Add(new JProperty("lastItem", true));
+                        currentListType = "";
+                        break;
                     }
 
-                    //check if last in array
-                    if (blockArray[i + 1] != null)
+                    //in the middle of array but last of bullet array
+                    if (currentListType == "bullet" && (string)blockArray[i + 1]["listItem"] == "" || (string)blockArray[i + 1]["listItem"] == "number")
                     {
-                        //check if next is in same list
-                        if ((string)blockArray[i + 1]["listItem"] == "bullet")
-                        {
-                            //continue on same list
-                            currentListType = "bullet";
-                        }
-                        else
-                        {
-                            //end list
-                            if (blockArray[i]["lastItem"] == null)
-                            {
-                                item.Add(new JProperty("lastItem", true));
-                            }
-                            currentListType = "";
-                        }
-                    }
-                    else
-                    {
+                        item.Add(new JProperty("lastItem", true));
                         currentListType = "";
                     }
-
                 }
-                else if ((string)blockArray[i]["listItem"] == "number")
+
+                if ((string)blockArray[i]["listItem"] == "number")
                 {
-                    //check if first 
+                    //check if first in bullet array
                     if (currentListType == "")
                     {
                         item.Add(new JProperty("firstItem", true));
                     }
 
-                    //check if last
-                    if (currentListType == "number")
+                    currentListType = "number";
+
+                    // check if last in array, also last in bullet array 
+                    if (blockArray.Count == i + 1)
                     {
-                        if (blockArray[i + 1] != null)
-                        {
-                            if ((string)blockArray[i + 1]["listItem"] == "" || (string)blockArray[i + 1]["listItem"] == "bullet")
-                            {
-                                item.Add(new JProperty("lastItem", true));
-                            }
-                        }
+                        item.Add(new JProperty("lastItem", true));
+                        currentListType = "";
+                        break;
                     }
-                    //check if last in array
-                    if (blockArray[i + 1] != null)
+
+                    //in the middle of array but last of bullet array
+                    if (currentListType == "number" && (string)blockArray[i + 1]["listItem"] == "" || (string)blockArray[i + 1]["listItem"] == "bullet")
                     {
-                        //check if next is in same list
-                        if ((string)blockArray[i + 1]["listItem"] == "number")
-                        {
-                            //continue on same list
-                            currentListType = "number";
-                        }
-                        else
-                        {
-                            //end list
-                            //item.Add(new JProperty("lastItem", true));
-                            if (blockArray[i]["lastItem"] == null)
-                            {
-                                item.Add(new JProperty("lastItem", true));
-                            }
-                            currentListType = "";
-                        }
-                    }
-                    else
-                    {
+                        item.Add(new JProperty("lastItem", true));
                         currentListType = "";
                     }
                 }

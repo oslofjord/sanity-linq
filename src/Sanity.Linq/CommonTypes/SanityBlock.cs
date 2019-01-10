@@ -17,5 +17,9 @@ namespace Sanity.Linq.CommonTypes
         public object[] Children { get; set; } = new object[] { };
 
         public SanityReference<SanityImageAsset> Asset { get; set; } = new SanityReference<SanityImageAsset> { };
+
+        public int? Level { get; set; }
+
+        public string ListItem { get; set; }
     }
 }

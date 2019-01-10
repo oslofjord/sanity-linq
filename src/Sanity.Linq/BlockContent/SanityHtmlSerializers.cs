@@ -125,7 +125,9 @@ namespace Sanity.Linq.BlockContent
                 text.Append(start.ToString() + child["text"] + end.ToString());
             }
 
-            return Task.FromResult($"{listStart}{listItemStart}<{tag}>{text}</{tag}>{listItemEnd}{listEnd}");
+            var result = $"{listStart}{listItemStart}<{tag}>{text}</{tag}>{listItemEnd}{listEnd}".Replace("\n","</br>");
+
+            return Task.FromResult(result);
 
             //return listStart + listItemStart + "<" + tag + ">" + text + "</" + tag + ">" + listItemEnd + listEnd;
         }
@@ -159,6 +161,14 @@ namespace Sanity.Linq.BlockContent
                 url.Append(parameters.ToString());                          // ?crop etc..
                 
             return Task.FromResult($"<figure><img src=\"{url}\"/></figure>");
+        }
+        public Task<string> SerializeTableAsync(JToken input, SanityOptions options)
+        {
+            var html = "";
+
+
+
+            return Task.FromResult(html);
         }
     }
 }

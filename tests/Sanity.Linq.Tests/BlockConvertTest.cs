@@ -17,7 +17,6 @@ namespace Sanity.Linq.Tests
         public async Task ConvertTest()
         {
             // this test tries to serialize the Body-element of a Post-document from the Sanity demo-dataset.
-
             var sanity = new SanityDataContext(Options);
             var posts = await sanity.DocumentSet<Post>().ToListAsync();
             var htmlBuilder = new SanityHtmlBuilder(Options);
@@ -73,7 +72,86 @@ namespace Sanity.Linq.Tests
                      new SanityImage
                     {
                         Asset = new SanityReference<SanityImageAsset> { Ref = image.Id },
-                    }
+                    },
+                     new SanityBlock
+                     {
+                         SanityType = "block",
+                         Level = 1,
+                         ListItem = "bullet",
+                         Children = new []
+                            {
+                                new SanitySpan
+                                {
+                                    Text = "With a great article..."
+                                }
+                            }
+                     },
+                     new SanityBlock
+                     {
+                         SanityType = "block",
+                         Level = 1,
+                         ListItem = "bullet",
+                         Children = new []
+                            {
+                                new SanitySpan
+                                {
+                                    Text = "With a great article..."
+                                }
+                            }
+                     },
+                     new SanityBlock
+                     {
+                         SanityType = "block",
+                         Level = 2,
+                         ListItem = "bullet",
+                         Children = new []
+                            {
+                                new SanitySpan
+                                {
+                                    Text = "With a great article..."
+                                }
+                            }
+                     },
+                     new SanityBlock
+                     {
+                         SanityType = "block",
+                         Level = 3,
+                         ListItem = "bullet",
+                         Children = new []
+                            {
+                                new SanitySpan
+                                {
+                                    Text = "With a great article..."
+                                }
+                            }
+                     },
+                     new SanityBlock
+                     {
+                         SanityType = "block",
+                         Level = 1,
+                         ListItem = "number",
+                         Children = new []
+                            {
+                                new SanitySpan
+                                {
+                                    Text = "With a great article..."
+                                }
+                            }
+                     }
+                     ,
+                     new SanityBlock
+                     {
+                         SanityType = "block",
+                         Level = 2,
+                         ListItem = "number",
+                         Children = new []
+                            {
+                                new SanitySpan
+                                {
+                                    Text = "With a great article..."
+                                }
+                            }
+                     }
                 }
             };
             var result = (await sanity.DocumentSet<Post>().Create(post).CommitAsync()).Results[0].Document;

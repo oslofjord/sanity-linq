@@ -7,8 +7,9 @@ import post from './post'
 import author from './author'
 import page from './page'
 import localeString from './localeString'
+import tabletest from './tabletest';
 
 export default createSchema({
   name: 'default',
-  types: schemaTypes.concat([localeString, page, blockContent, post, author, category])
+  types: schemaTypes.concat([localeString, page, blockContent, post, author, category, tabletest])
 })
