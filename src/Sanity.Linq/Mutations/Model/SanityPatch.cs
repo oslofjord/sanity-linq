@@ -30,7 +30,7 @@ namespace Sanity.Linq.Mutations
         }
 
 
-        public string IfRevisionId { get; set; }
+        public string IfRevisionID { get; set; }
 
         public object Set { get; set; }
 

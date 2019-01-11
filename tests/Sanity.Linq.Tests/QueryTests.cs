@@ -109,6 +109,7 @@ namespace Sanity.Linq.Tests
             var result = await sanity.CommitAsync();
 
 
+
             // LINQ Query
             var count = (sanity.DocumentSet<Post>().Count());
             var query = sanity.DocumentSet<Post>().Include(p => p.Author).Where(p => p.PublishedAt >= DateTime.Today);
@@ -122,6 +123,16 @@ namespace Sanity.Linq.Tests
             Assert.True(results.Count > 0);
             Assert.NotNull(results[0].Author?.Value);
             Assert.Equal("Joe Bloggs", results[0].Author.Value.Name);
+
+            // Update test
+            var postToUpdate = results[0];
+            postToUpdate.Title = "New title";
+
+            await sanity.DocumentSet<Post>().Update(postToUpdate).CommitAsync();
+
+            var updatedItem = await sanity.DocumentSet<Post>().GetAsync(postToUpdate.Id);
+
+            Assert.True(updatedItem.Title == "New title");
         }
     }
 }
