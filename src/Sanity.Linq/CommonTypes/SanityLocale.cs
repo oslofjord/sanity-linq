@@ -58,6 +58,10 @@ namespace Sanity.Linq.CommonTypes
                 {
                     return ((JObject)this[languageCode]).ToObject<T>();
                 }
+                else if (this[languageCode] is JArray)
+                {
+                    return ((JArray)this[languageCode]).ToObject<T>();
+                }
                 else
                 {
                     var sVal = this[languageCode]?.ToString();

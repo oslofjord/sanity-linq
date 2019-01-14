@@ -26,7 +26,7 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
     <Authors>Oslofjord Operations AS</Authors>
     <Company>Oslofjord Operations AS</Company>
     <Product>Sanity LINQ</Product>
-    <Version>1.1.5</Version>
+    <Version>1.1.6</Version>
     <Description>Strongly-typed .Net Client for Sanity CMS (https://sanity.io)</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Copyright>2018 Oslofjord Operations AS</Copyright>
@@ -35,17 +35,18 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
     <RepositoryType>git</RepositoryType>
     <PackageTags>sanity cms dotnet linq client groq</PackageTags>
     <PackageLicenseUrl>https://raw.githubusercontent.com/oslofjord/sanity-linq/master/LICENSE</PackageLicenseUrl>
-    <AssemblyVersion>1.1.5.0</AssemblyVersion>
+    <AssemblyVersion>1.1.6.0</AssemblyVersion>
     <PackageId>Sanity.Linq</PackageId>
     <AssemblyName>Sanity.Linq</AssemblyName>
     <RootNamespace>Sanity.Linq</RootNamespace>
-    <FileVersion>1.1.5.0</FileVersion>
+    <FileVersion>1.1.6.0</FileVersion>
     <PackageReleaseNotes>1.0 - Sanity Linq library
 1.1 - BlockContent library
 1.1.1 - Improvements BlockContent
 1.1.2 - Fixed bug where SanityLocale.Get() would not work with strings.
 1.1.4 - Fixed bug that caused a SanityLocale&lt;object&gt; object to get Translations property with null for all values.
-1.1.5 - Fixed bug in update</PackageReleaseNotes>
+1.1.5 - Fixed bug in update
+1.1.6 - Support for localized arrays</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
