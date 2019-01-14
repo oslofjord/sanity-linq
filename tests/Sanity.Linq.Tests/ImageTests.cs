@@ -33,13 +33,19 @@ namespace Sanity.Linq.Tests
             var author = new Author()
             {
                 Name = "Joe Bloggs",
-                Image = new SanityImage
-                {
-                    Asset = new SanityReference<SanityImageAsset> { Ref = image.Id },            
+                Images = new SanityImage[] {
+                    new SanityImage
+                    {
+                        Asset = new SanityReference<SanityImageAsset> { Ref = image.Id },
+                    }
                 }
             };
 
             await sanity.DocumentSet<Author>().Create(author).CommitAsync();
+
+            var retrievedDoc = await sanity.DocumentSet<Author>().Include(a => a.Images).ToListAsync();
+
+            Assert.True(retrievedDoc.FirstOrDefault()?.Images?.FirstOrDefault()?.Asset != null);
 
 
 

@@ -17,7 +17,7 @@ namespace Sanity.Linq.Demo.Model
         public SanitySlug Slug { get; set; }
 
         [Include]
-        public SanityImage Image { get; set; }
+        public SanityImage[] Images { get; set; }
 
         public object[] Bio { get; set; }
     }

@@ -631,13 +631,31 @@ namespace Sanity.Linq
                                 var fieldList = fields.Select(f => f == propertyName ? $"{propertyName}[]->{(nestedFields.Count > 0 ? ("{" + nestedFields.Aggregate((a, b) => a + "," + b) + "}") : "")}" : f).Aggregate((c, n) => c + "," + n);
                                 projection = $"{fieldName}{{ {fieldList} }}";
 
+                            } 
+                            else
+                            {
+                                
+                                var listOfSanityImagesType = propertyType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>) && i.GetGenericArguments()[0].GetProperties().Any(p => p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(SanityReference<>) && (p.Name.ToLower() == "asset" || ((p.GetCustomAttributes<JsonPropertyAttribute>(true).FirstOrDefault())?.PropertyName?.Equals("asset")).GetValueOrDefault())));
+                                bool isListOfSanityImages = listOfSanityImagesType != null;
+                                if (isListOfSanityImages)
+                                {
+                                    // CASE 6: Array of objects with "asset" field (e.g. images)
+                                    var elementType = listOfSanityImagesType.GetGenericArguments()[0];
+                                    var fields = GetPropertyProjectionList(elementType);
+
+
+                                    // Nested Reference
+                                    var fieldList = fields.Select(f => f == "asset" ? $"asset->{{ ... }}" : f).Aggregate((c, n) => c + "," + n);
+                                    projection = $"{fieldName}[] {{ {fieldList} }}";
+                                }
                             }
+
                         }
                     }
                 }
             }
 
-            // CASE 6: Fallback case: not nested / not stongly typed
+            // CASE 7: Fallback case: not nested / not stongly typed
             if (string.IsNullOrEmpty(projection))
             {
                 var enumerableType = propertyType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
