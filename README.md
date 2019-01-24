@@ -1,5 +1,7 @@
 # Sanity LINQ
  **A strongly-typed .Net Client** for [Sanity CMS](https://sanity.io) with support for LINQ queries, mutations, transactions, joins, projections and more...
+ 
+[![Build status](https://oslofjord.visualstudio.com/sanity-linq/_apis/build/status/Build%20sanity-linq)](https://oslofjord.visualstudio.com/sanity-linq/_build/latest?definitionId=118)
 
 
 ## Introduction
@@ -296,6 +298,45 @@ The `SanityClient` class can be used for making "raw" GROQ requests to Sanity:
 var client = new SanityClient(options);
 await result = await client.FetchAsync("*[_type == "post"]");
 ```
+
+### 9. Rendering Block Content
+When you use the block editor in Sanity, it produces a structured array structure that you can use to render the content on any platform you might want. We have provided a class which can help you serialize your content to HTML, or potentially other formats using custom serializers. The `SanityHTmlBuilder` class has several inbuilt serializers, and new serializers can be added for custom Sanity types.
+
+ `SanityHtmlBuilder` can be accessed in several different ways:
+```csharp
+// Create a stand-alone instance:
+var builder = new SanityHtmlBuilder(Options);
+var html = await builder.BuildAsync(myBlockContent); //Block content can be a string, JObject or POCO
+
+// Access via existing SanityContext:
+var sanity = new SanityDataContext(Options);
+var post = await sanity.DocumentSet<Post>().FirstOrDefault();
+var result = await sanity.HtmlBuilder.BuildAsync(post.Body);
+
+// Use extension method directly on document (using Sanity.Linq.Extensions)
+var sanity = new SanityDataContext(Options);
+var post = await sanity.DocumentSet<Post>().FirstOrDefault();
+var result = await post.Body.ToHtmlAsync(sanity);
+```
+You can also add your custom serializers to the `SanityHtmlBuilder`
+
+```csharp
+sanity.HtmlBuilder.AddSerializer("myType", MySerializerFn);
+// or
+sanity.AddHtmlSerializer("myType", MySerializerFn);
+// or 
+builder.AddSerializer("myType", MySerializerFn);
+```
+
+The HTML builder supports serializing BlockContent arrays as well as single fields (such as an image field):
+```csharp
+//This will check if the "_type" of the Body field has a serializer in the HtmlBuilder.Serializers dictionary and use it to return html.
+var html = await htmlBuilder.BuildAsync(post.Body);
+...
+//strongly typed object
+var html = await post.Body.ToHtmlAsync(sanity); // the whole content
+var imageTag = await post.MainImage.ToHtmlAsync(sanity); // just a single block
+```
 -------
 
 ## Contribute
@@ -304,10 +345,4 @@ Feel free to submit pull-requests to the Sanity LINQ project!
 
 ### Licence
 
-[GNU General Public License v3.0](./LICENCE)
-
-**Licence Summary**
-
-You may copy, distribute and modify the software as long as you track changes/dates in source files. Any modifications to or software including (via compiler) GPL-licensed code must also be made available under the GPL along with build & install instructions.
-
-
+The Sanity LINQ is available under the [MIT Licence](https://github.com/oslofjord/sanity-linq/blob/master/LICENSE)
