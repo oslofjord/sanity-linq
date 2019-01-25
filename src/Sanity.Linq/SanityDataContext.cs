@@ -60,7 +60,7 @@ namespace Sanity.Linq
         /// </summary>
         /// <param name="options"></param>
         /// <param name="isShared">Indicates that the context can be used by multiple SanityDocumentSets</param>
-        public SanityDataContext(SanityOptions options, JsonSerializerSettings serializerSettings = null)
+        public SanityDataContext(SanityOptions options, JsonSerializerSettings serializerSettings = null, SanityHtmlBuilderOptions htmlBuilderOptions = null)
         {
             if (options == null)
             {
@@ -74,7 +74,7 @@ namespace Sanity.Linq
             };
             Client = new SanityClient(options, serializerSettings);
             Mutations = new SanityMutationBuilder(Client);
-            HtmlBuilder = new SanityHtmlBuilder(options, null, SerializerSettings);
+            HtmlBuilder = new SanityHtmlBuilder(options, null, SerializerSettings, htmlBuilderOptions);
         }
 
        
