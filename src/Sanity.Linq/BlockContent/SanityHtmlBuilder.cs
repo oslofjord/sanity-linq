@@ -12,13 +12,17 @@ namespace Sanity.Linq.BlockContent
     public class SanityHtmlBuilder
     {
         SanityOptions _options;
+        SanityHtmlBuilderOptions _htmlBuilderOptions;
         public Dictionary<string, Func<JToken, SanityOptions, Task<string>>> Serializers { get; } = new Dictionary<string, Func<JToken, SanityOptions, Task<string>>>();
         SanityTreeBuilder treeBuilder = new SanityTreeBuilder();
 
         public JsonSerializerSettings SerializerSettings { get; }
 
 
-        public SanityHtmlBuilder(SanityOptions options, Dictionary<string,Func<JToken,SanityOptions,Task<string>>> customSerializers = null, JsonSerializerSettings serializerSettings = null)
+        public SanityHtmlBuilder(SanityOptions options,
+            Dictionary<string,Func<JToken,SanityOptions,Task<string>>> customSerializers = null,
+            JsonSerializerSettings serializerSettings = null,
+            SanityHtmlBuilderOptions htmlBuilderOptions = null)
         {
             _options = options;
             SerializerSettings = serializerSettings ?? new JsonSerializerSettings
@@ -34,6 +38,13 @@ namespace Sanity.Linq.BlockContent
             else
             {
                 InitSerializers();
+            }
+            if (htmlBuilderOptions != null)
+            {
+                _htmlBuilderOptions = htmlBuilderOptions;
+            }else
+            {
+                _htmlBuilderOptions = new SanityHtmlBuilderOptions();
             }
             
         }
@@ -115,8 +126,10 @@ namespace Sanity.Linq.BlockContent
             }
             if (!Serializers.ContainsKey(type))
             {
-                // TODO: Add options to class for ignoring/skipping types.
-                throw new Exception($"No serializer for type '{type}' could be found. Consider providing a custom serializer.");
+                // TODO: Add options for ignoring/skipping specific types.
+                return _htmlBuilderOptions.IgnoreAllUnknownTypes 
+                       ? Task.FromResult("") 
+                       : throw new Exception($"No serializer for type '{type}' could be found. Consider providing a custom serializer or setting HtmlBuilderOptions.IgnoreAllUnknownTypes.");
             }
             return Serializers[type](block, _options);
         }
