@@ -39,9 +39,6 @@ namespace Sanity.Linq.Tests
             Assert.NotNull(noTitle);
             Assert.Equal("My Page", enTitle);
             Assert.Equal("Min side", noTitle);
-
-
-
         }
 
         [Fact]
