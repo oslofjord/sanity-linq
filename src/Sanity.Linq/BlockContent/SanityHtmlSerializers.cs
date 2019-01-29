@@ -107,6 +107,11 @@ namespace Sanity.Linq.BlockContent
                                 start.Append($"<a target=\"_blank\" href=\"{markDef["href"]?.ToString()}\">");
                                 end.Append( "</a>");
                             }
+                            else if (markDef["_type"]?.ToString() == "internalLink")
+                            {
+                                start.Append($"<a href=\"{markDef["href"]?.ToString()}\">");
+                                end.Append("</a>");
+                            }
                             else
                             {
                                 // Mark not supported....
@@ -118,7 +123,6 @@ namespace Sanity.Linq.BlockContent
                             start.Append($"<{mark}>");
                             end.Append($"</{mark}>");
                         }
-                        
                     }
                 }
 
