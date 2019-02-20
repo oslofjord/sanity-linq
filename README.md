@@ -13,7 +13,21 @@ Inspiration was drawn from the .Net client provided by [onyboy](https://github.c
 
 The Sanity LINQ client goes beyond providing a simple HTTP client and introduces strongly typed queries, projections, mutations and joins - much in the same way as Entity Framework provides this for SQL.
 
+## Installation
+Sanity.Linq is available as a NuGet package.
+
+**Install using Package Manager:**
+```
+PM> Install-Package Sanity.Linq
+```
+**Install using .Net CLI:**
+```
+> dotnet add package Sanity.Linq
+```
+
+
 ## Getting Started
+
 To get started, simply instaniate a new SanityDataContext:
 
 ``` csharp
