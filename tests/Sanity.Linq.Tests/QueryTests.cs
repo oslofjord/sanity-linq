@@ -50,6 +50,13 @@ namespace Sanity.Linq.Tests
                 Id = Guid.NewGuid().ToString(),
                 Name = "Joe Bloggs",
                 Slug = new SanitySlug("joe"),
+                FavoriteCategories = new List<SanityReference<Category>>()
+                {
+                    new SanityReference<Category>
+                    {
+                        Value = category1
+                    }
+                }
             };
 
             sanity.DocumentSet<Author>().Create(author);
@@ -110,7 +117,12 @@ namespace Sanity.Linq.Tests
 
             // LINQ Query
             var count = (sanity.DocumentSet<Post>().Count());
-            var query = sanity.DocumentSet<Post>().Include(p => p.Author).Include(p => p.Author.Value.Images).Where(p => p.PublishedAt >= DateTime.Today);
+            var query = sanity.DocumentSet<Post>()
+                .Include(p => p.Author)
+                .Include(p => p.Author.Value.Images)
+                .Include(p => p.Categories)
+                .Include(p => p.Author.Value.FavoriteCategories)
+                .Where(p => p.PublishedAt >= DateTime.Today);
 
             // Execute Query
             var results = await query.ToListAsync();

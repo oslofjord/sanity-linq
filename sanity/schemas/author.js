@@ -37,7 +37,13 @@ export default {
           lists: []
         }
       ]
-    }
+    },
+    {
+      name: 'favoriteCategories',
+      title: 'Favorite Categories',
+      type: 'array',
+      of: [{type: 'reference', to: {type: 'category'}}]
+    },
   ],
   preview: {
     select: {

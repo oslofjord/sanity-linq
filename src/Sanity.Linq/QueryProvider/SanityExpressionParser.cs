@@ -561,11 +561,12 @@ namespace Sanity.Linq
                     }
                     else if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
                     {
-                        bool isList = prop.PropertyType.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+                        var listInterface = prop.PropertyType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+                        bool isList = listInterface != null;
                         if (isList)
                         {
                             // Array Case: Recursively add projection list for class types
-                            result.Add($"{name}[]{{{GetPropertyProjectionList(prop.PropertyType).Aggregate((c, n) => c + "," + n)}}}");
+                            result.Add($"{name}[]{{{GetPropertyProjectionList(listInterface.GetGenericArguments()[0]).Aggregate((c, n) => c + "," + n)}}}");
                         }
                         else
                         {
@@ -900,6 +901,10 @@ namespace Sanity.Linq
                             {
                                 obj = obj[part + GroqTokens["[]"]] as JObject;
                             }
+                            else if (obj.ContainsKey(part + GroqTokens["[]"] + GroqTokens["->"]))
+                            {
+                                obj = obj[part + GroqTokens["[]"] + GroqTokens["->"]] as JObject;
+                            }
                             else
                             {
                                 obj[part] = new JObject();
@@ -912,6 +917,10 @@ namespace Sanity.Linq
                             {
                                 obj.Remove(part);
                             }
+                            if (obj.ContainsKey(part + GroqTokens["[]"]))
+                            {
+                                obj.Remove(part + GroqTokens["[]"]);
+                            }
                             if (jObjectInclude.ContainsKey(part))
                             {
                                 obj[part] = jObjectInclude[part];
@@ -923,6 +932,10 @@ namespace Sanity.Linq
                             else if (jObjectInclude.ContainsKey(part + GroqTokens["->"]))
                             {
                                 obj[part + GroqTokens["->"]] = jObjectInclude[part + GroqTokens["->"]];
+                            }
+                            else if (jObjectInclude.ContainsKey(part + GroqTokens["[]"] + GroqTokens["->"]))
+                            {
+                                obj[part + GroqTokens["[]"] + GroqTokens["->"]] = jObjectInclude[part + GroqTokens["[]"] + GroqTokens["->"]];
                             }
                         }
                     }

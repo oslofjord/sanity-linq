@@ -17,6 +17,9 @@ namespace Sanity.Linq.Demo.Model
         public SanitySlug Slug { get; set; }
 
         [Include]
+        public List<SanityReference<Category>> FavoriteCategories { get; set; }
+
+        [Include]
         public SanityImage[] Images { get; set; }
 
         public object[] Bio { get; set; }
