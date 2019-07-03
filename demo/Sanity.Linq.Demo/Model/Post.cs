@@ -23,6 +23,6 @@ namespace Sanity.Linq.Demo.Model
 
         public DateTimeOffset? PublishedAt { get; set; }
 
-        public object Body { get; set; }
+        public object[] Body { get; set; }
     }
 }

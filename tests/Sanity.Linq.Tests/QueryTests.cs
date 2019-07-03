@@ -108,11 +108,9 @@ namespace Sanity.Linq.Tests
             // Save all changes in one transaction
             var result = await sanity.CommitAsync();
 
-
-
             // LINQ Query
             var count = (sanity.DocumentSet<Post>().Count());
-            var query = sanity.DocumentSet<Post>().Include(p => p.Author).Where(p => p.PublishedAt >= DateTime.Today);
+            var query = sanity.DocumentSet<Post>().Include(p => p.Author).Include(p => p.Author.Value.Images).Where(p => p.PublishedAt >= DateTime.Today);
 
             // Execute Query
             var results = await query.ToListAsync();

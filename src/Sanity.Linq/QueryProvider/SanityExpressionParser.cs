@@ -17,16 +17,19 @@
 
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Sanity.Linq.CommonTypes;
 using Sanity.Linq.Extensions;
 using Sanity.Linq.Internal;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Sanity.Linq
 {
@@ -95,6 +98,10 @@ namespace Sanity.Linq
             if (expression is MethodCallExpression m)
             {
                 TransformMethodCallExpression(m);
+                if (!(m.Arguments[0] is ConstantExpression))
+                {
+                    Visit(m.Arguments[0]);
+                }
                 return expression;
 
             }
@@ -251,10 +258,10 @@ namespace Sanity.Linq
                         {
                             if (l.Body is MemberExpression m && m.Member.MemberType == MemberTypes.Property)
                             {
-                                var fieldName = TransformOperand(l.Body);
+                                var fieldPath = TransformOperand(l.Body);
                                 var propertyType = l.Body.Type;
-                                var projection = GetJoinProjection(fieldName, propertyType);
-                                QueryBuilder.Includes[fieldName] = projection;
+                                var projection = GetJoinProjection(fieldPath.Split(new[] { '.', '>' }).LastOrDefault(), propertyType);
+                                QueryBuilder.Includes[fieldPath] = projection;
                                 return projection;
                             }
                         }
@@ -401,7 +408,6 @@ namespace Sanity.Linq
             throw new Exception($"Unary expression of type {u.GetType()} and nodeType {u.NodeType} not supported. ");
         }
 
-
         protected string TransformOperand(Expression e)
         {
             // Attempt to simplyfy
@@ -537,17 +543,39 @@ namespace Sanity.Linq
         protected static List<string> GetPropertyProjectionList(Type type)
         {
             var props = type.GetProperties().Where(p => p.CanWrite);
-            var propNames = new List<string>();
+            var result = new List<string>();
+
+            // "Include all" primative types with a simple ...
+            result.Add("...");
             foreach (var prop in props)
             {
-                if (prop.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Length == 0)
+                var isIgnored = prop.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Length > 0;
+                if (!isIgnored)
                 {
-
-                    var jsonName = (prop.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName ?? prop.Name.ToCamelCase();
-                    propNames.Add(jsonName);
+                    var name = (prop.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName ?? prop.Name.ToCamelCase();
+                    var isIncluded = (prop.GetCustomAttributes<IncludeAttribute>(true).FirstOrDefault() != null);
+                    if (isIncluded)
+                    { 
+                        // Add a join projection for [Include]d properties
+                        result.Add(GetJoinProjection(name, prop.PropertyType));
+                    }
+                    else if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
+                    {
+                        bool isList = prop.PropertyType.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+                        if (isList)
+                        {
+                            // Array Case: Recursively add projection list for class types
+                            result.Add($"{name}[]{{{GetPropertyProjectionList(prop.PropertyType).Aggregate((c, n) => c + "," + n)}}}");
+                        }
+                        else
+                        {
+                            // Object Case: Recursively add projection list for class types
+                            result.Add($"{name}{{{GetPropertyProjectionList(prop.PropertyType).Aggregate((c, n) => c + "," + n)}}}");
+                        }
+                    }
                 }                
             }
-            return propNames;
+            return result;
         }
 
         /// <summary>
@@ -560,6 +588,12 @@ namespace Sanity.Linq
         public static string GetJoinProjection(string fieldName, Type propertyType)
         {
             string projection = "";
+
+            // String or primative
+            if (propertyType == typeof(string) || propertyType.IsPrimitive)
+            {
+                return fieldName;
+            }
 
             var isSanityReferenceType = propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(SanityReference<>);
             if (isSanityReferenceType)
@@ -594,7 +628,7 @@ namespace Sanity.Linq
                         var nestedFields = GetPropertyProjectionList(sanityImageAssetProperty.PropertyType);
 
                         // Nested Reference
-                        var fieldList = fields.Select(f => f == "asset" ? $"asset->{(nestedFields.Count > 0 ? ("{" + nestedFields.Aggregate((a, b) => a + "," + b) + "}") : "")}" : f).Aggregate((c, n) => c + "," + n);
+                        var fieldList = fields.Select(f => f.StartsWith("asset") ? $"asset->{(nestedFields.Count > 0 ? ("{" + nestedFields.Aggregate((a, b) => a + "," + b) + "}") : "")}" : f).Aggregate((c, n) => c + "," + n);
                         projection = $"{fieldName}{{ {fieldList} }}";
                     }
                     else
@@ -624,7 +658,8 @@ namespace Sanity.Linq
                                 // CASE 5: Property->List<SanityReference<T>>
                                 var propertyName = nestedListOfSanityReferenceType.GetCustomAttribute<JsonPropertyAttribute>()?.PropertyName ?? nestedListOfSanityReferenceType.Name.ToCamelCase();
                                 var fields = GetPropertyProjectionList(propertyType);
-                                var elementType = nestedListOfSanityReferenceType.PropertyType.GetGenericArguments()[0].GetGenericArguments()[0];
+                                var collectionType = nestedListOfSanityReferenceType.PropertyType.GetGenericArguments()[0];
+                                var elementType = collectionType.GetGenericArguments()[0];
                                 var nestedFields = GetPropertyProjectionList(elementType);
 
                                 // Nested Reference
@@ -639,17 +674,16 @@ namespace Sanity.Linq
                                 bool isListOfSanityImages = listOfSanityImagesType != null;
                                 if (isListOfSanityImages)
                                 {
-                                    // CASE 6: Array of objects with "asset" field (e.g. images)
-                                    var elementType = listOfSanityImagesType.GetGenericArguments()[0];
+                                    // CASE 6: Array of objects with "asset" field (e.g. images)                                    
+                                    var elementType = listOfSanityImagesType.GetGenericArguments()[0];                                    
                                     var fields = GetPropertyProjectionList(elementType);
 
 
                                     // Nested Reference
-                                    var fieldList = fields.Select(f => f == "asset" ? $"asset->{{ ... }}" : f).Aggregate((c, n) => c + "," + n);
+                                    var fieldList = fields.Select(f => f.StartsWith("asset") ? $"asset->{{ ... }}" : f).Aggregate((c, n) => c + "," + n);
                                     projection = $"{fieldName}[] {{ {fieldList} }}";
                                 }
                             }
-
                         }
                     }
                 }
@@ -688,7 +722,7 @@ namespace Sanity.Linq
                     else
                     {
                         // "object" without any fields defined
-                        projection = $"{fieldName}->";
+                        projection = $"{fieldName}->{{ ... }}";
                     }
                 }
             }
@@ -710,6 +744,8 @@ namespace Sanity.Linq
             public int Take { get; set; } = 0;
             public int Skip { get; set; } = 0;
             public Dictionary<string,string> Includes { get; set; } = new Dictionary<string, string>();
+
+
 
             public virtual string Build(bool includeProjections)
             {
@@ -762,7 +798,6 @@ namespace Sanity.Linq
                         }
                     }
 
-
                     // Add joins / includes
                     if (Includes.Count > 0 && string.IsNullOrEmpty(projection))
                     {
@@ -778,26 +813,16 @@ namespace Sanity.Linq
                             // "object" case - include only "includes" / "joins" by default.
                             projection = Includes.Keys.Aggregate((c, n) => c + "," + n);
                         }
-
                     }
 
                     // Add projection
                     if (!string.IsNullOrEmpty(projection))
-                    {
-                        if (Includes.Count > 0)
-                        {
-                            // Replace fields in projection with an expanded projection representing field names.
-                            // e.g from { name, mainImage, organization } to { name, mainImage { asset-> }, organization-> }
-                            //     given that mainImage is an asset and organization is a reference
-                            projection = projection.Split(',').Select(f => f.Trim())
-                                .Select(f => Includes.ContainsKey(f) ? Includes[f] : f)
-                                .Aggregate((c, n) => c + "," + n);
-                        }
-
-                        sb.Append($"{{ {projection} }}");
+                    {                        
+                        projection = ExpandIncludesInProjection(projection, Includes);                       
+                        projection = projection.Replace("{...}", ""); // Remove redundant {...} to simplify query
+                        sb.Append(projection);
                     }
                 }
-
 
                 // Add orderings
                 if (Orderings.Count > 0)
@@ -833,6 +858,129 @@ namespace Sanity.Linq
                 }
 
                 return sb.ToString();
+            }
+
+            private string ExpandIncludesInProjection(string projection, Dictionary<string, string> includes)
+            {
+                // Finds and replaces includes in projection by converting projection (GROQ) to an equivelant JSON representation,
+                // modifying the JSON replacement and then converting back to GROQ.
+                //
+                // The reason for converting to JSON is simply to be able to work with the query in a hierarchical structure. 
+                // This could also be done creating some sort of query tree object, which might be a more appropriate / cleaner solution.
+
+                var jsonProjection = GroqToJson($"{{{projection}}}");
+                var jObjectProjection = JsonConvert.DeserializeObject(jsonProjection) as JObject;
+
+                foreach (var includeKey in Includes.Keys.OrderBy(k => k))
+                {
+                    var jsonInclude = GroqToJson($"{{{Includes[includeKey]}}}");
+                    var jObjectInclude = JsonConvert.DeserializeObject(jsonInclude) as JObject;
+
+                    var pathParts = includeKey
+                        .Replace("[]", GroqTokens["[]"])
+                        .Replace("->", ".")
+                        .TrimEnd('.').Split('.');
+
+                    JObject obj = jObjectProjection;
+                    for (var i = 0; i < pathParts.Length; i++)
+                    {
+                        var part = pathParts[i];
+                        bool isLast = i == pathParts.Length - 1;
+                        if (!isLast)
+                        {
+                            if (obj.ContainsKey(part))
+                            {
+                                obj = obj[part] as JObject;
+                            }
+                            else if (obj.ContainsKey(part + GroqTokens["->"]))
+                            {
+                                obj = obj[part + GroqTokens["->"]] as JObject;
+                            }
+                            else if (obj.ContainsKey(part + GroqTokens["[]"]))
+                            {
+                                obj = obj[part + GroqTokens["[]"]] as JObject;
+                            }
+                            else
+                            {
+                                obj[part] = new JObject();
+                                obj = obj[part] as JObject;
+                            }
+                        }
+                        else
+                        {
+                            if (obj.ContainsKey(part))
+                            {
+                                obj.Remove(part);
+                            }
+                            if (jObjectInclude.ContainsKey(part))
+                            {
+                                obj[part] = jObjectInclude[part];
+                            }
+                            else if (jObjectInclude.ContainsKey(part + GroqTokens["[]"]))
+                            {
+                                obj[part + GroqTokens["[]"]] = jObjectInclude[part + GroqTokens["[]"]];
+                            }
+                            else if (jObjectInclude.ContainsKey(part + GroqTokens["->"]))
+                            {
+                                obj[part + GroqTokens["->"]] = jObjectInclude[part + GroqTokens["->"]];
+                            }
+                        }
+                    }
+                }
+
+                // Convert back to JSON
+                jsonProjection = jObjectProjection.ToString(Formatting.None);
+                // Convert JSON back to GROQ query
+                projection = JsonToGroq(jsonProjection);
+
+                return projection;
+            }
+
+            private Dictionary<string, string> GroqTokens = new Dictionary<string, string>
+            {
+                { "...", "XXX" },
+                { "->", "YYY" },
+                { "[]", "ZZZ" }
+
+            };
+
+            private string GroqToJson(string groq)
+            {
+                var json = groq
+                                .Replace(" ", "")
+                                .Replace("{", ":{")
+                                .Replace("...", GroqTokens["..."])
+                                .Replace("->", GroqTokens["->"])
+                                .Replace("[]", GroqTokens["[]"])
+                                .TrimStart(':');
+
+                // Replace variable names with valid json (e.g. convert myField to "myField":true)
+                var reVariables = new Regex("(,|{)([^\"}:,]+)(,|})");
+                var reMatches = reVariables.Matches(json);
+                while (reMatches.Count > 0)
+                {
+                    foreach (Match match in reMatches)
+                    {
+                        var fieldName = match.Groups[2].Value;
+                        var fieldReplacement = $"\"{fieldName}\":true";
+                        json = json.Replace(match.Value, match.Value.Replace(fieldName, fieldReplacement));
+                    }
+
+                    reMatches = reVariables.Matches(json);
+                }
+
+                return json;
+            }
+
+            private string JsonToGroq(string json)
+            {
+                return json
+                    .Replace(GroqTokens["..."], "...")
+                    .Replace(GroqTokens["->"], "->")
+                    .Replace(":{", "{")
+                    .Replace(GroqTokens["[]"], "[]")
+                    .Replace(":true", "")
+                    .Replace("\"", "");
             }
         }
 

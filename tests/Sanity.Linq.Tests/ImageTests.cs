@@ -43,7 +43,7 @@ namespace Sanity.Linq.Tests
 
             await sanity.DocumentSet<Author>().Create(author).CommitAsync();
 
-            var retrievedDoc = await sanity.DocumentSet<Author>().Include(a => a.Images).ToListAsync();
+            var retrievedDoc = await sanity.DocumentSet<Author>().ToListAsync();
 
             Assert.True(retrievedDoc.FirstOrDefault()?.Images?.FirstOrDefault()?.Asset != null);
 

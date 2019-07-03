@@ -20,5 +20,6 @@ namespace Sanity.Linq.Demo.Model
         public SanityImage[] Images { get; set; }
 
         public object[] Bio { get; set; }
+
     }
 }
