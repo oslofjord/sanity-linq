@@ -29,11 +29,13 @@ namespace Sanity.Linq
     {
         public override bool CanConvert(Type objectType)
         {
-            return objectType.IsGenericType && objectType.GetGenericTypeDefinition() == typeof(SanityReference<>);
+            return (objectType.IsGenericType && objectType.GetGenericTypeDefinition() == typeof(SanityReference<>)); // ||
+                  // objectType.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>) && i.GetGenericArguments()[0].IsGenericType && i.GetGenericArguments()[0].GetGenericTypeDefinition() == typeof(SanityReference<>));
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override object ReadJson(JsonReader reader, Type type, object existingValue, JsonSerializer serializer)
         {
+            var objectType = type;
             var elemType = objectType.GetGenericArguments()[0];
             var obj = serializer.Deserialize(reader) as JObject;
             if (obj != null)
