@@ -24,5 +24,15 @@ namespace Sanity.Linq
     [AttributeUsage(AttributeTargets.Property)]
     public class IncludeAttribute : Attribute
     {
+        public IncludeAttribute()
+        {
+        }
+
+        public IncludeAttribute(string fieldName)
+        {
+            FieldName = fieldName;
+        }
+
+        public string FieldName { get; }
     }
 }

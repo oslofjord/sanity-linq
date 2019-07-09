@@ -117,8 +117,16 @@ namespace Sanity.Linq
             var includeMethod = typeof(SanityDocumentSetExtensions).GetMethod("Include").MakeGenericMethod(typeof(TDoc), typeof(TProperty));
             var exp = Expression.Call(null, includeMethod, Expression, property);
             Expression = exp;
+            return this;           
+        }
+
+        public SanityDocumentSet<TDoc> Include<TProperty>(Expression<Func<TDoc, TProperty>> property, string targetName)
+        {
+            var includeMethod = typeof(SanityDocumentSetExtensions).GetMethod("Include").MakeGenericMethod(typeof(TDoc), typeof(TProperty), typeof(string));
+            var exp = Expression.Call(null, includeMethod, Expression, property, Expression.Constant(targetName));
+            Expression = exp;
             return this;
-           
+
         }
 
         public IEnumerator<TDoc> GetEnumerator()
