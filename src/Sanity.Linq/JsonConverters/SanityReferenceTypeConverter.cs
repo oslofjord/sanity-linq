@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -29,8 +30,7 @@ namespace Sanity.Linq
     {
         public override bool CanConvert(Type objectType)
         {
-            return (objectType.IsGenericType && objectType.GetGenericTypeDefinition() == typeof(SanityReference<>)); // ||
-                  // objectType.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>) && i.GetGenericArguments()[0].IsGenericType && i.GetGenericArguments()[0].GetGenericTypeDefinition() == typeof(SanityReference<>));
+            return (objectType.IsGenericType && objectType.GetGenericTypeDefinition() == typeof(SanityReference<>));
         }
 
         public override object ReadJson(JsonReader reader, Type type, object existingValue, JsonSerializer serializer)
@@ -51,7 +51,7 @@ namespace Sanity.Linq
                     objectType.GetProperty(nameof(SanityReference<object>.Ref)).SetValue(res, obj.GetValue("_id")?.ToString());
                     objectType.GetProperty(nameof(SanityReference<object>.SanityType)).SetValue(res, "reference");
                     objectType.GetProperty(nameof(SanityReference<object>.SanityKey)).SetValue(res, obj.GetValue("_key"));
-                    objectType.GetProperty(nameof(SanityReference<object>.Value)).SetValue(res, ((JObject)obj).ToObject(elemType));
+                    objectType.GetProperty(nameof(SanityReference<object>.Value)).SetValue(res, serializer.Deserialize(new StringReader(obj.ToString()), elemType));
                     return res;
                 }
             }
