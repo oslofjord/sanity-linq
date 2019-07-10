@@ -159,6 +159,24 @@ namespace Sanity.Linq
             }
         }
 
+        public static IQueryable<TEntity> Include<TEntity, TProperty>(this IQueryable<TEntity> source, Expression<Func<TEntity, TProperty>> property, string sourceName)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            if (source is SanityDocumentSet<TEntity> dbSet)
+            {
+                ((SanityDocumentSet<TEntity>)source).Include(property, sourceName);
+                return source;
+            }
+            else
+            {
+                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+            }
+        }
+
         public static SanityMutationBuilder<TDoc> Patch<TDoc>(this IQueryable<TDoc> source, Action<SanityPatch> patch)
         {
             if (source == null)

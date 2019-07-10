@@ -17,6 +17,9 @@ namespace Sanity.Linq.Demo.Model
 
         public SanityReference<Author> Author { get; set; }
 
+        [Include("author")]
+        public Author DereferencedAuthor { get; set; }
+
         public CommonTypes.SanityImage MainImage { get; set; }
 
         public List<SanityReference<Category>> Categories { get; set; }

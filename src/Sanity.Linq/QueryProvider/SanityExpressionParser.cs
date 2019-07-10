@@ -611,7 +611,7 @@ namespace Sanity.Linq
             var fieldRef = sourceName;
             if (sourceName != targetName && !string.IsNullOrEmpty(targetName))
             {
-                fieldRef = $"\"{targetName}\": {sourceName}";
+                fieldRef = $"\"{targetName}\":{sourceName}";
             }
 
             // String or primative
@@ -638,7 +638,7 @@ namespace Sanity.Linq
                     var elementType = listOfSanityReferenceType.GetGenericArguments()[0].GetGenericArguments()[0];
                     var fields = GetPropertyProjectionList(elementType);
                     var fieldList = fields.Aggregate((c, n) => c + "," + n);
-                    projection = $"{fieldRef}[]->{{ {fieldList} }}";
+                    projection = $"{fieldRef}[]->{{{fieldList}}}";
                 }
                 else
                 {
@@ -654,7 +654,7 @@ namespace Sanity.Linq
 
                         // Nested Reference
                         var fieldList = fields.Select(f => f.StartsWith("asset") ? $"asset->{(nestedFields.Count > 0 ? ("{" + nestedFields.Aggregate((a, b) => a + "," + b) + "}") : "")}" : f).Aggregate((c, n) => c + "," + n);
-                        projection = $"{fieldRef}{{ {fieldList} }}";
+                        projection = $"{fieldRef}{{{fieldList}}}";
                     }
                     else
                     {
@@ -689,7 +689,7 @@ namespace Sanity.Linq
 
                                 // Nested Reference
                                 var fieldList = fields.Select(f => f == propertyName ? $"{propertyName}[]->{(nestedFields.Count > 0 ? ("{" + nestedFields.Aggregate((a, b) => a + "," + b) + "}") : "")}" : f).Aggregate((c, n) => c + "," + n);
-                                projection = $"{fieldRef}{{ {fieldList} }}";
+                                projection = $"{fieldRef}{{{fieldList}}}";
 
                             } 
                             else
@@ -705,8 +705,8 @@ namespace Sanity.Linq
 
 
                                     // Nested Reference
-                                    var fieldList = fields.Select(f => f.StartsWith("asset") ? $"asset->{{ ... }}" : f).Aggregate((c, n) => c + "," + n);
-                                    projection = $"{fieldRef}[] {{ {fieldList} }}";
+                                    var fieldList = fields.Select(f => f.StartsWith("asset") ? $"asset->{{{SanityConstants.SPREAD_OPERATOR}}}" : f).Aggregate((c, n) => c + "," + n);
+                                    projection = $"{fieldRef}[]{{{fieldList}}}";
                                 }
                             }
                         }
@@ -727,7 +727,15 @@ namespace Sanity.Linq
                     {
                         // Other strongly typed includes
                         var fieldList = fields.Aggregate((c, n) => c + "," + n);
-                        projection = $"{fieldRef}[]->{{ {fieldList} }}";
+                        // projection = $"{fieldRef}[]->{{ {fieldList} }}";
+
+                        // Include both references and inline objects:
+                        // E.g. 
+                        // activities[] {
+                        //      ...,
+                        //      _type == 'reference' => @->{...}
+                        //    },
+                        projection = $"{fieldRef}[]{{{fieldList},{SanityConstants.DEREFERENCING_SWITCH + "{" + fieldList + "}"}}}";
                     }
                     else
                     {
@@ -742,18 +750,30 @@ namespace Sanity.Linq
                     {
                         // Other strongly typed includes
                         var fieldList = fields.Aggregate((c, n) => c + "," + n);
-                        projection = $"{fieldRef}->{{ {fieldList} }}";
+                        // projection = $"{fieldRef}->{{{fieldList}}}";
+                        projection = $"{fieldRef}{{{fieldList},{SanityConstants.DEREFERENCING_SWITCH + "{" + fieldList + "}"}}}";
                     }
                     else
                     {
                         // "object" without any fields defined
-                        projection = $"{fieldRef}->{{ ... }}";
+                        //projection = $"{fieldRef}->{{{SanityConstants.SPREAD_OPERATOR}}}";
+                        projection = $"{fieldRef}{{{SanityConstants.SPREAD_OPERATOR},{SanityConstants.DEREFERENCING_SWITCH + "{" + SanityConstants.SPREAD_OPERATOR + "}"}}}";
                     }
                 }
             }
 
             return projection;
 
+        }
+
+        internal class SanityConstants
+        {
+            public const string ARRAY_INDICATOR = "[]";
+            public const string DEREFERENCING_SWITCH = "_type=='reference'=>@->";
+            public const string SPREAD_OPERATOR = "...";
+            public const string STRING_DELIMITOR = "\"";
+            public const string COLON = ":";
+            public const string DEREFERENCING_OPERATOR = "->";
         }
 
 
@@ -846,7 +866,7 @@ namespace Sanity.Linq
                     if (!string.IsNullOrEmpty(projection))
                     {                        
                         projection = ExpandIncludesInProjection(projection, Includes);                       
-                        projection = projection.Replace("{...}", ""); // Remove redundant {...} to simplify query
+                        projection = projection.Replace($"{{{SanityConstants.SPREAD_OPERATOR}}}", ""); // Remove redundant {...} to simplify query
                         sb.Append(projection);
                     }
                 }
@@ -887,6 +907,16 @@ namespace Sanity.Linq
                 return sb.ToString();
             }
 
+            private Dictionary<string, string> GroqTokens = new Dictionary<string, string>
+            {
+                { SanityConstants.DEREFERENCING_SWITCH, "__0001__" },
+                { SanityConstants.DEREFERENCING_OPERATOR, "__0002__" },
+                { SanityConstants.STRING_DELIMITOR, "__0003__" },
+                { SanityConstants.COLON, "__0004__" },
+                { SanityConstants.SPREAD_OPERATOR, "__0005__" },
+                { SanityConstants.ARRAY_INDICATOR, "__0006__" },
+            };
+
             private string ExpandIncludesInProjection(string projection, Dictionary<string, string> includes)
             {
                 // Finds and replaces includes in projection by converting projection (GROQ) to an equivelant JSON representation,
@@ -904,10 +934,11 @@ namespace Sanity.Linq
                     var jObjectInclude = JsonConvert.DeserializeObject(jsonInclude) as JObject;
 
                     var pathParts = includeKey
-                        .Replace("\":", GroqTokens["\":"])
-                        .Replace("\"", GroqTokens["\""])
-                        .Replace("[]", GroqTokens["[]"])
-                        .Replace("->", ".")
+                        .Replace(SanityConstants.COLON, GroqTokens[SanityConstants.COLON])
+                        .Replace(SanityConstants.STRING_DELIMITOR, GroqTokens[SanityConstants.STRING_DELIMITOR])
+                        .Replace(SanityConstants.ARRAY_INDICATOR, GroqTokens[SanityConstants.ARRAY_INDICATOR])
+                        .Replace(SanityConstants.DEREFERENCING_SWITCH, GroqTokens[SanityConstants.DEREFERENCING_SWITCH])
+                        .Replace(SanityConstants.DEREFERENCING_OPERATOR, ".")
                         .TrimEnd('.').Split('.');
 
                     JObject obj = jObjectProjection;
@@ -917,23 +948,21 @@ namespace Sanity.Linq
                         bool isLast = i == pathParts.Length - 1;
                         if (!isLast)
                         {
-                            if (obj.ContainsKey(part))
+                            // Traverse / construct path to property
+                            bool propertyExists = false;
+                            foreach (var property in obj)
                             {
-                                obj = obj[part] as JObject;
+                                if (property.Key == part
+                                    || property.Key.StartsWith($"{GroqTokens[SanityConstants.STRING_DELIMITOR]}{part}{GroqTokens[SanityConstants.STRING_DELIMITOR]}")
+                                    || property.Key.StartsWith(part + GroqTokens[SanityConstants.ARRAY_INDICATOR])
+                                    || property.Key.StartsWith(part + GroqTokens[SanityConstants.DEREFERENCING_OPERATOR]))
+                                { 
+                                    obj = obj[property.Key] as JObject;
+                                    propertyExists = true;
+                                    break;
+                                }
                             }
-                            else if (obj.ContainsKey(part + GroqTokens["->"]))
-                            {
-                                obj = obj[part + GroqTokens["->"]] as JObject;
-                            }
-                            else if (obj.ContainsKey(part + GroqTokens["[]"]))
-                            {
-                                obj = obj[part + GroqTokens["[]"]] as JObject;
-                            }
-                            else if (obj.ContainsKey(part + GroqTokens["[]"] + GroqTokens["->"]))
-                            {
-                                obj = obj[part + GroqTokens["[]"] + GroqTokens["->"]] as JObject;
-                            }
-                            else
+                            if (!propertyExists)
                             {
                                 obj[part] = new JObject();
                                 obj = obj[part] as JObject;
@@ -941,29 +970,34 @@ namespace Sanity.Linq
                         }
                         else
                         {
-                            if (obj.ContainsKey(part))
+                            // Remove previous representations of field (typically without a projection)
+                            var fieldsToReplace = new List<string>();
+                            foreach (var property in obj)
                             {
-                                obj.Remove(part);
+                                if (property.Key == part 
+                                    || property.Key.StartsWith($"{GroqTokens[SanityConstants.STRING_DELIMITOR]}{part}{GroqTokens[SanityConstants.STRING_DELIMITOR]}") 
+                                    || property.Key.StartsWith(part + GroqTokens[SanityConstants.ARRAY_INDICATOR]) 
+                                    || property.Key.StartsWith(part + GroqTokens[SanityConstants.DEREFERENCING_OPERATOR]))
+                                {
+                                    fieldsToReplace.Add(property.Key);
+                                }
                             }
-                            if (obj.ContainsKey(part + GroqTokens["[]"]))
+                            foreach (var key in fieldsToReplace)
                             {
-                                obj.Remove(part + GroqTokens["[]"]);
+                                obj.Remove(key);
                             }
-                            if (jObjectInclude.ContainsKey(part))
+
+                            // Set field to new projection
+                            foreach (var include in jObjectInclude)
                             {
-                                obj[part] = jObjectInclude[part];
-                            }
-                            else if (jObjectInclude.ContainsKey(part + GroqTokens["[]"]))
-                            {
-                                obj[part + GroqTokens["[]"]] = jObjectInclude[part + GroqTokens["[]"]];
-                            }
-                            else if (jObjectInclude.ContainsKey(part + GroqTokens["->"]))
-                            {
-                                obj[part + GroqTokens["->"]] = jObjectInclude[part + GroqTokens["->"]];
-                            }
-                            else if (jObjectInclude.ContainsKey(part + GroqTokens["[]"] + GroqTokens["->"]))
-                            {
-                                obj[part + GroqTokens["[]"] + GroqTokens["->"]] = jObjectInclude[part + GroqTokens["[]"] + GroqTokens["->"]];
+                                if (include.Key == part
+                                    || include.Key.StartsWith($"{GroqTokens[SanityConstants.STRING_DELIMITOR]}{part}{GroqTokens[SanityConstants.STRING_DELIMITOR]}")
+                                    || include.Key.StartsWith(part + GroqTokens[SanityConstants.ARRAY_INDICATOR])
+                                    || include.Key.StartsWith(part + GroqTokens[SanityConstants.DEREFERENCING_OPERATOR]))
+                                {
+                                    obj[include.Key] = include.Value;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -977,26 +1011,15 @@ namespace Sanity.Linq
                 return projection;
             }
 
-            private Dictionary<string, string> GroqTokens = new Dictionary<string, string>
-            {
-                { "\"", "VVV" },
-                { "\":", "WWW" },
-                { "...", "XXX" },
-                { "->", "YYY" },
-                { "[]", "ZZZ" },
-            };
-
             private string GroqToJson(string groq)
             {
-                var json = groq
-                                .Replace(" ", "")
-                                .Replace("\":", GroqTokens["\":"])
-                                .Replace("\"", GroqTokens["\""])
-                                .Replace("{", ":{")
-                                .Replace("...", GroqTokens["..."])
-                                .Replace("->", GroqTokens["->"])
-                                .Replace("[]", GroqTokens["[]"])                                
-                                .TrimStart(':');
+                var json = groq.Replace(" ", "");
+                foreach (var token in GroqTokens.Keys.OrderBy(k => GroqTokens[k]))
+                {
+                    json = json.Replace(token, GroqTokens[token]);
+                }
+                json = json.Replace("{", ":{")
+                .TrimStart(':');                                
 
                 // Replace variable names with valid json (e.g. convert myField to "myField":true)
                 var reVariables = new Regex("(,|{)([^\"}:,]+)(,|})");
@@ -1018,15 +1041,15 @@ namespace Sanity.Linq
 
             private string JsonToGroq(string json)
             {
-                return json
-                    .Replace(GroqTokens["..."], "...")
-                    .Replace(GroqTokens["->"], "->")
+                var groq = json
                     .Replace(":{", "{")
-                    .Replace(GroqTokens["[]"], "[]")
                     .Replace(":true", "")
-                    .Replace("\"", "")
-                    .Replace(GroqTokens["\":"], "\":")
-                    .Replace(GroqTokens["\""], "\"");
+                    .Replace("\"", "");
+                foreach (var token in GroqTokens.Keys)
+                {
+                    groq = groq.Replace(GroqTokens[token], token);
+                }
+                return groq;
             }
         }
 

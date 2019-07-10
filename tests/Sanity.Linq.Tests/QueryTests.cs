@@ -119,6 +119,7 @@ namespace Sanity.Linq.Tests
             var count = (sanity.DocumentSet<Post>().Count());
             var query = sanity.DocumentSet<Post>()
                 .Include(p => p.Author)
+                .Include(p => p.DereferencedAuthor, "author")
                 .Include(p => p.Author.Value.Images)
                 .Include(p => p.Categories)
                 .Include(p => p.Author.Value.FavoriteCategories)
@@ -132,6 +133,7 @@ namespace Sanity.Linq.Tests
             Assert.True(count > 0);
             Assert.True(results.Count > 0);
             Assert.NotNull(results[0].Author?.Value);
+            Assert.NotNull(results[0].DereferencedAuthor);
             Assert.Equal("Joe Bloggs", results[0].Author.Value.Name);
 
             // Update test
