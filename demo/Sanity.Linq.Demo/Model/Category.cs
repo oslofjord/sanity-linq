@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Sanity.Linq.CommonTypes;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,5 +24,8 @@ namespace Sanity.Linq.Demo.Model
         public string Title { get; set; }
 
         public string Description { get; set; }
+
+        [Include]
+        public SanityImage MainImage { get; set; }
     }
 }

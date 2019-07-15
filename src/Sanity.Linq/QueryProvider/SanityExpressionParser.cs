@@ -643,7 +643,7 @@ namespace Sanity.Linq
                 else
                 {
                     var nestedProperties = propertyType.GetProperties();
-                    var sanityImageAssetProperty = nestedProperties.FirstOrDefault(p => !p.PropertyType.IsGenericType && (p.Name.ToLower() == "asset" || ((p.GetCustomAttributes<JsonPropertyAttribute>(true).FirstOrDefault())?.PropertyName?.Equals("asset")).GetValueOrDefault()));
+                    var sanityImageAssetProperty = nestedProperties.FirstOrDefault(p => p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(SanityReference<>) && (p.Name.ToLower() == "asset" || ((p.GetCustomAttributes<JsonPropertyAttribute>(true).FirstOrDefault())?.PropertyName?.Equals("asset")).GetValueOrDefault()));
                     bool isSanityImage = sanityImageAssetProperty != null;
                     if (isSanityImage)
                     {
@@ -670,7 +670,7 @@ namespace Sanity.Linq
 
                             // Nested Reference
                             var fieldList = fields.Select(f => f == propertyName ? $"{propertyName}->{(nestedFields.Count > 0 ? ("{" + nestedFields.Aggregate((a, b) => a + "," + b) + "}") : "")}" : f).Aggregate((c, n) => c + "," + n);
-                            projection = $"{fieldRef}{{ {fieldList} }}";
+                            projection = $"{fieldRef}{{{fieldList}}}";
 
                         }
                         else

@@ -21,6 +21,7 @@ namespace Sanity.Linq.Tests
             // Clear existing records
             await sanity.DocumentSet<Post>().Delete().CommitAsync();
             await sanity.DocumentSet<Author>().Delete().CommitAsync();
+            await sanity.DocumentSet<Category>().Delete().CommitAsync();
 
             // Delete images
             await sanity.Images.Delete().CommitAsync();
@@ -28,6 +29,18 @@ namespace Sanity.Linq.Tests
             // Upload new image
             var imageUri = new Uri("https://www.sanity.io/static/images/opengraph/social.png");
             var image = (await sanity.Images.UploadAsync(imageUri)).Document;
+
+            var category = new Category
+            {
+                CategoryId = "AUTHORS",
+                Description = "Category for popular authors",
+                Title = "Popular Authors",
+                MainImage = new SanityImage
+                {
+                    Asset = new SanityReference<SanityImageAsset> { Ref = image.Id },
+                }
+            };
+            await sanity.DocumentSet<Category>().Create(category).CommitAsync();
 
             // Link image to new author
             var author = new Author()
@@ -38,6 +51,13 @@ namespace Sanity.Linq.Tests
                     {
                         Asset = new SanityReference<SanityImageAsset> { Ref = image.Id },
                     }
+                },
+                FavoriteCategories = new List<SanityReference<Category>>
+                {
+                    new SanityReference<Category>
+                    {
+                        Value = category
+                    }
                 }
             };
 
@@ -45,9 +65,9 @@ namespace Sanity.Linq.Tests
 
             var retrievedDoc = await sanity.DocumentSet<Author>().ToListAsync();
 
-            Assert.True(retrievedDoc.FirstOrDefault()?.Images?.FirstOrDefault()?.Asset != null);
+            Assert.True(retrievedDoc.FirstOrDefault()?.Images?.FirstOrDefault()?.Asset?.Value?.Extension != null);
 
-
+            Assert.True(retrievedDoc.FirstOrDefault()?.FavoriteCategories?.FirstOrDefault().Value?.MainImage?.Asset?.Value?.Extension != null);
 
         }
     }
