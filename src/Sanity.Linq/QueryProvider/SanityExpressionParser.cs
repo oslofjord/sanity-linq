@@ -827,26 +827,27 @@ namespace Sanity.Linq
                 {
                     var projection = Projection;
 
+                    // NOTE: This block is most likely redundant (already covered by GetPropertyProjectionList below)
                     // Attribute based includes ([Include])
                     // TODO: Note similar logic in TransformMethodCallExpression -- could be refactored to consolidate
-                    if (DocType != null)
-                    {
-                        var properties = DocType.GetProperties();
-                        var includedProps = properties.Where(p => p.GetCustomAttributes<IncludeAttribute>(true).FirstOrDefault() != null).ToList();
-                        foreach (var prop in includedProps)
-                        {
-                            var includeAttr = prop.GetCustomAttributes<IncludeAttribute>(true).FirstOrDefault();
-                            var targetName = (prop.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName ?? prop.Name.ToCamelCase();
-                            var sourceName = !string.IsNullOrEmpty(includeAttr.FieldName) ? includeAttr.FieldName : targetName;
-                            if (!Includes.ContainsKey(targetName))
-                            {
-                                Includes.Add(targetName, GetJoinProjection(sourceName, targetName, prop.PropertyType));
-                            }
-                        }
-                    }
+                    //if (DocType != null)
+                    //{
+                    //    var properties = DocType.GetProperties();
+                    //    var includedProps = properties.Where(p => p.GetCustomAttributes<IncludeAttribute>(true).FirstOrDefault() != null).ToList();
+                    //    foreach (var prop in includedProps)
+                    //    {
+                    //        var includeAttr = prop.GetCustomAttributes<IncludeAttribute>(true).FirstOrDefault();
+                    //        var targetName = (prop.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName ?? prop.Name.ToCamelCase();
+                    //        var sourceName = !string.IsNullOrEmpty(includeAttr.FieldName) ? includeAttr.FieldName : targetName;
+                    //        if (!Includes.ContainsKey(targetName))
+                    //        {
+                    //            Includes.Add(targetName, GetJoinProjection(sourceName, targetName, prop.PropertyType));
+                    //        }
+                    //    }
+                    //}
 
                     // Add joins / includes
-                    if (Includes.Count > 0 && string.IsNullOrEmpty(projection))
+                    if (string.IsNullOrEmpty(projection))
                     {
                         // Joins require an explicit projection
                         var propertyList = GetPropertyProjectionList(ResultType);
@@ -867,7 +868,10 @@ namespace Sanity.Linq
                     {                        
                         projection = ExpandIncludesInProjection(projection, Includes);                       
                         projection = projection.Replace($"{{{SanityConstants.SPREAD_OPERATOR}}}", ""); // Remove redundant {...} to simplify query
-                        sb.Append(projection);
+                        if (projection != $"{{{SanityConstants.SPREAD_OPERATOR}}}") // Don't need to add an empty projection
+                        {
+                            sb.Append(projection);
+                        }
                     }
                 }
 
