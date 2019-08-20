@@ -18,7 +18,7 @@ namespace Sanity.Linq.BlockContent
                 if ((string)blockArray[i]["listItem"] == "bullet")
                 {
                     //check if first in bullet array
-                    if (currentListType == "")
+                    if (currentListType == "" && !item.ContainsKey("firstItem"))
                     {
                         item.Add(new JProperty("firstItem", true));
                     }
@@ -28,7 +28,10 @@ namespace Sanity.Linq.BlockContent
                     // check if last in array, also last in bullet array 
                     if (blockArray.Count == i+1)
                     {
-                        item.Add(new JProperty("lastItem", true));
+                        if (!item.ContainsKey("lastItem"))
+                        {
+                            item.Add(new JProperty("lastItem", true));
+                        }
                         currentListType = "";
                         break;
                     }
@@ -36,7 +39,10 @@ namespace Sanity.Linq.BlockContent
                     //in the middle of array but last of bullet array
                     if (currentListType == "bullet" && (string)blockArray[i + 1]["listItem"] == null || (string)blockArray[i + 1]["listItem"] == "number")
                     {
-                        item.Add(new JProperty("lastItem", true));
+                        if (!item.ContainsKey("lastItem"))
+                        {
+                            item.Add(new JProperty("lastItem", true));
+                        }
                         currentListType = "";
                     }
                 }
@@ -44,7 +50,7 @@ namespace Sanity.Linq.BlockContent
                 if ((string)blockArray[i]["listItem"] == "number")
                 {
                     //check if first in bullet array
-                    if (currentListType == "")
+                    if (currentListType == "" && !item.ContainsKey("firstItem"))
                     {
                         item.Add(new JProperty("firstItem", true));
                     }
@@ -54,7 +60,10 @@ namespace Sanity.Linq.BlockContent
                     // check if last in array, also last in bullet array 
                     if (blockArray.Count == i + 1)
                     {
-                        item.Add(new JProperty("lastItem", true));
+                        if (!item.ContainsKey("lastItem"))
+                        {
+                            item.Add(new JProperty("lastItem", true));
+                        }
                         currentListType = "";
                         break;
                     }
@@ -62,7 +71,10 @@ namespace Sanity.Linq.BlockContent
                     //in the middle of array but last of bullet array
                     if (currentListType == "number" && (string)blockArray[i + 1]["listItem"] == null || (string)blockArray[i + 1]["listItem"] == "bullet")
                     {
-                        item.Add(new JProperty("lastItem", true));
+                        if (!item.ContainsKey("lastItem"))
+                        {
+                            item.Add(new JProperty("lastItem", true));
+                        }
                         currentListType = "";
                     }
                 }
