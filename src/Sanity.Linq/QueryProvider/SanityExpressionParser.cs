@@ -581,14 +581,24 @@ namespace Sanity.Linq
                         if (isList)
                         {
                             // Array Case: Recursively add projection list for class types
-                            var listItemProjection = GetPropertyProjectionList(listInterface.GetGenericArguments()[0]).Aggregate((c, n) => c + "," + n);
-                            if (listItemProjection != "...")
+                            var elementType = listInterface.GetGenericArguments()[0];
+
+                            // Avoid recursion for special case of JObject
+                            if (elementType != typeof(JObject))
                             {
-                                result.Add($"{fieldRef}[]{{{listItemProjection}}}");
+                                var listItemProjection = GetPropertyProjectionList(elementType).Aggregate((c, n) => c + "," + n);
+                                if (listItemProjection != "...")
+                                {
+                                    result.Add($"{fieldRef}[]{{{listItemProjection}}}");
+                                }
                             }
                         }
                         else
                         {
+                            if (prop.PropertyType == typeof(JObject))
+                            {
+                                result.Add($"{fieldRef}{{...}}");
+                            }
                             // Object Case: Recursively add projection list for class types
                             result.Add($"{fieldRef}{{{GetPropertyProjectionList(prop.PropertyType).Aggregate((c, n) => c + "," + n)}}}");
                         }
