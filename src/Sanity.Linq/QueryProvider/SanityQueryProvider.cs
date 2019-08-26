@@ -36,8 +36,11 @@ namespace Sanity.Linq
         public Type DocType { get; }
         public SanityDataContext Context { get; }
 
-        public SanityQueryProvider(Type docType, SanityDataContext context)
+        public int MaxNestingLevel { get; }
+
+        public SanityQueryProvider(Type docType, SanityDataContext context, int maxNestingLevel)
         {
+            MaxNestingLevel = maxNestingLevel;
             DocType = docType;
             Context = context;
         }
@@ -74,7 +77,7 @@ namespace Sanity.Linq
 
         public string GetSanityQuery<TResult>(Expression expression)
         {
-            var parser = new SanityExpressionParser(expression, DocType, typeof(TResult));
+            var parser = new SanityExpressionParser(expression, DocType, MaxNestingLevel, typeof(TResult));
             return parser.BuildQuery();
         }
 

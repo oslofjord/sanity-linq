@@ -25,6 +25,8 @@ namespace Sanity.Linq.Demo.Model
 
         public string Description { get; set; }
 
+        public List<Category> SubCategories { get; set; }
+
         [Include]
         public SanityImage MainImage { get; set; }
     }

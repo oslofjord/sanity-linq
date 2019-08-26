@@ -43,7 +43,7 @@ namespace Sanity.Linq
     {
 
         private object _dsLock = new object();
-        private ConcurrentDictionary<Type, SanityDocumentSet> _documentSets = new ConcurrentDictionary<Type, SanityDocumentSet>();
+        private ConcurrentDictionary<string, SanityDocumentSet> _documentSets = new ConcurrentDictionary<string, SanityDocumentSet>();
 
         internal bool IsShared { get; }
 
@@ -94,23 +94,24 @@ namespace Sanity.Linq
         /// </summary>
         /// <typeparam name="TDoc"></typeparam>
         /// <returns></returns>
-        public virtual SanityDocumentSet<TDoc> DocumentSet<TDoc>()
+        public virtual SanityDocumentSet<TDoc> DocumentSet<TDoc>(int maxNestingLevel = 7)
         {
+            var key = $"{typeof(TDoc)?.FullName ?? ""}_{maxNestingLevel}";
             lock (_dsLock)
             {
-                if (!_documentSets.ContainsKey(typeof(TDoc)))
+                if (!_documentSets.ContainsKey(key))
                 {
-                    _documentSets[typeof(TDoc)] = new SanityDocumentSet<TDoc>(this);
+                    _documentSets[key] = new SanityDocumentSet<TDoc>(this, maxNestingLevel);
                 }
             }
-            return _documentSets[(typeof(TDoc))] as SanityDocumentSet<TDoc>;
+            return _documentSets[key] as SanityDocumentSet<TDoc>;
         }
 
-        public virtual SanityDocumentSet<SanityImageAsset> Images => DocumentSet<SanityImageAsset>();
+        public virtual SanityDocumentSet<SanityImageAsset> Images => DocumentSet<SanityImageAsset>(2);
 
-        public virtual SanityDocumentSet<SanityFileAsset> Files => DocumentSet<SanityFileAsset>();
+        public virtual SanityDocumentSet<SanityFileAsset> Files => DocumentSet<SanityFileAsset>(2);
 
-        public virtual SanityDocumentSet<SanityDocument> Documents => DocumentSet<SanityDocument>();
+        public virtual SanityDocumentSet<SanityDocument> Documents => DocumentSet<SanityDocument>(2);
 
         public virtual void ClearChanges()
         {

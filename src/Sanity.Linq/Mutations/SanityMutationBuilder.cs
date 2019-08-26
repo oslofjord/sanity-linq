@@ -26,8 +26,18 @@ using System.Text;
 
 namespace Sanity.Linq.Mutations
 {
+    public static class MutationQuerySettings
+    {
+        /// <summary>
+        ///  Most likely, nesting is never applicable for mutation queries
+        /// </summary>
+        public const int MAX_NESTING_LEVEL = 2;
+    }
+
+
     public class SanityMutationBuilder<TDoc>
     {
+
         public SanityMutationBuilder(SanityMutationBuilder innerBuilder)
         {
             InnerBuilder = innerBuilder;
@@ -101,7 +111,7 @@ namespace Sanity.Linq.Mutations
 
         public SanityMutationBuilder<TDoc> DeleteByQuery(Expression<Func<TDoc, bool>> query)
         {
-            var parser = new SanityExpressionParser(query, typeof(TDoc));
+            var parser = new SanityExpressionParser(query, typeof(TDoc), MutationQuerySettings.MAX_NESTING_LEVEL);
             var sanityQuery = parser.BuildQuery(false);
             DeleteByQuery(sanityQuery);
             return this;
@@ -109,7 +119,7 @@ namespace Sanity.Linq.Mutations
 
         internal SanityMutationBuilder<TDoc> DeleteByQuery(Expression query)
         {
-            var parser = new SanityExpressionParser(query, typeof(TDoc));
+            var parser = new SanityExpressionParser(query, typeof(TDoc), MutationQuerySettings.MAX_NESTING_LEVEL);
             var sanityQuery = parser.BuildQuery(false);
             DeleteByQuery(sanityQuery);
             return this;
@@ -189,7 +199,7 @@ namespace Sanity.Linq.Mutations
             {
                 var oPatch = new SanityPatchByQuery<TDoc>(query);
                 patch.Invoke(oPatch);
-                var parser = new SanityExpressionParser(query, typeof(TDoc));
+                var parser = new SanityExpressionParser(query, typeof(TDoc), MutationQuerySettings.MAX_NESTING_LEVEL);
                 InnerBuilder.Mutations.Add(new SanityPatchMutation(oPatch) { DocType = typeof(TDoc) });
                 return this;
             }
@@ -331,7 +341,7 @@ namespace Sanity.Linq.Mutations
 
         public SanityMutationBuilder DeleteByQuery(Expression<Func<object, bool>> query)
         {
-            var parser = new SanityExpressionParser(query, typeof(object));
+            var parser = new SanityExpressionParser(query, typeof(object), MutationQuerySettings.MAX_NESTING_LEVEL);
             var sanityQuery = parser.BuildQuery(false);
             DeleteByQuery(sanityQuery);
             return this;
@@ -361,7 +371,7 @@ namespace Sanity.Linq.Mutations
             {
                 var sPatch = JsonConvert.SerializeObject(patch);
                 var oPatch = JsonConvert.DeserializeObject<SanityPatchByQuery>(sPatch);
-                var parser = new SanityExpressionParser(query, typeof(object));
+                var parser = new SanityExpressionParser(query, typeof(object), MutationQuerySettings.MAX_NESTING_LEVEL);
                 var sQuery = parser.BuildQuery(false);
                 oPatch.Query = sQuery;
                 Mutations.Add(new SanityPatchMutation(oPatch));
@@ -375,7 +385,7 @@ namespace Sanity.Linq.Mutations
             {
                 var oPatch = new SanityPatchByQuery(query);
                 patch.Invoke(oPatch);
-                var parser = new SanityExpressionParser(query, typeof(object));
+                var parser = new SanityExpressionParser(query, typeof(object), MutationQuerySettings.MAX_NESTING_LEVEL);
                 var sQuery = parser.BuildQuery(false);
                 oPatch.Query = sQuery;
                 Mutations.Add(new SanityPatchMutation(oPatch));

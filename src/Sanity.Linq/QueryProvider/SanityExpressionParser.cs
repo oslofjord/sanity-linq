@@ -36,15 +36,17 @@ namespace Sanity.Linq
     internal class SanityExpressionParser : ExpressionVisitor
     {
 
-        public SanityExpressionParser(Expression expression, Type docType, Type resultType = null)
+        public SanityExpressionParser(Expression expression, Type docType, int maxNestingLevel, Type resultType = null)
         {
             Expression = expression;
             DocType = docType;
             ResultType = TypeSystem.GetElementType(resultType);
+            MaxNestingLevel = maxNestingLevel;
         }
 
 
         private SanityQueryBuilder QueryBuilder { get; set; } = new SanityQueryBuilder();
+        public int MaxNestingLevel { get; set; }
         public Expression Expression { get; }
         public Type DocType { get; }
         public Type ResultType { get; }
@@ -53,7 +55,7 @@ namespace Sanity.Linq
         {            
             //Initialize query builder
             QueryBuilder = new SanityQueryBuilder();
-
+            
             // Add contraint for root type
             QueryBuilder.DocType = DocType;
             QueryBuilder.ResultType = ResultType ?? DocType;
@@ -65,10 +67,8 @@ namespace Sanity.Linq
                 Visit(Expression);
             }
 
-
-
             // Build query
-            return QueryBuilder.Build(includeProjections);
+            return QueryBuilder.Build(includeProjections, MaxNestingLevel);
             
         }
 
@@ -272,7 +272,7 @@ namespace Sanity.Linq
                                         sourceName = targetName;
                                     }
                                 }
-                                var projection = GetJoinProjection(sourceName, targetName, propertyType);
+                                var projection = GetJoinProjection(sourceName, targetName, propertyType, 0, MaxNestingLevel);
                                 QueryBuilder.Includes[fieldPath] = projection;
                                 return projection;
                             }
@@ -552,11 +552,16 @@ namespace Sanity.Linq
             throw new Exception($"Operands of type {e.GetType()} and nodeType {e.NodeType} not supported. ");
         }
 
-        protected static List<string> GetPropertyProjectionList(Type type)
+        protected static List<string> GetPropertyProjectionList(Type type, int nestingLevel, int maxNestingLevel)
         {
             var props = type.GetProperties().Where(p => p.CanWrite);
-            var result = new List<string>();
+            if (nestingLevel == maxNestingLevel)
+            {
+                return new List<string>() { "..." };
+            }
 
+            var result = new List<string>();
+            
             // "Include all" primative types with a simple ...
             result.Add("...");
             foreach (var prop in props)
@@ -572,7 +577,7 @@ namespace Sanity.Linq
                     if (isIncluded)
                     { 
                         // Add a join projection for [Include]d properties
-                        result.Add(GetJoinProjection(sourceName, targetName, prop.PropertyType));
+                        result.Add(GetJoinProjection(sourceName, targetName, prop.PropertyType, nestingLevel+1, maxNestingLevel));
                     }
                     else if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
                     {
@@ -586,7 +591,8 @@ namespace Sanity.Linq
                             // Avoid recursion for special case of JObject
                             if (elementType != typeof(JObject))
                             {
-                                var listItemProjection = GetPropertyProjectionList(elementType).Aggregate((c, n) => c + "," + n);
+                                var fieldList = GetPropertyProjectionList(elementType, nestingLevel+1, maxNestingLevel);
+                                var listItemProjection = fieldList.Aggregate((c, n) => c + "," + n);
                                 if (listItemProjection != "...")
                                 {
                                     result.Add($"{fieldRef}[]{{{listItemProjection}}}");
@@ -600,7 +606,8 @@ namespace Sanity.Linq
                                 result.Add($"{fieldRef}{{...}}");
                             }
                             // Object Case: Recursively add projection list for class types
-                            result.Add($"{fieldRef}{{{GetPropertyProjectionList(prop.PropertyType).Aggregate((c, n) => c + "," + n)}}}");
+                            var fieldList = GetPropertyProjectionList(prop.PropertyType, nestingLevel+1, maxNestingLevel);
+                            result.Add($"{fieldRef}{{{fieldList.Aggregate((c, n) => c + "," + n)}}}");
                         }
                     }
                 }                
@@ -615,7 +622,7 @@ namespace Sanity.Linq
         /// <param name="sourceName"></param>
         /// <param name="propertyType"></param>
         /// <returns></returns>
-        public static string GetJoinProjection(string sourceName, string targetName, Type propertyType)
+        public static string GetJoinProjection(string sourceName, string targetName, Type propertyType, int nestingLevel, int maxNestingLevel)
         {
             string projection = "";
             var fieldRef = sourceName;
@@ -634,7 +641,7 @@ namespace Sanity.Linq
             if (isSanityReferenceType)
             {
                 // CASE 1: SanityReference<T>
-                var fields = GetPropertyProjectionList(propertyType.GetGenericArguments()[0]);
+                var fields = GetPropertyProjectionList(propertyType.GetGenericArguments()[0], nestingLevel, maxNestingLevel);
                 var fieldList = fields.Aggregate((c, n) => c + "," + n);
                 projection = $"{fieldRef}->{{ {fieldList} }}";
             }
@@ -646,7 +653,7 @@ namespace Sanity.Linq
                 {
                     // CASE 2: IEnumerable<SanityReference<T>>
                     var elementType = listOfSanityReferenceType.GetGenericArguments()[0].GetGenericArguments()[0];
-                    var fields = GetPropertyProjectionList(elementType);
+                    var fields = GetPropertyProjectionList(elementType, nestingLevel, maxNestingLevel);
                     var fieldList = fields.Aggregate((c, n) => c + "," + n);
                     projection = $"{fieldRef}[]->{{{fieldList}}}";
                 }
@@ -659,8 +666,8 @@ namespace Sanity.Linq
                     {
                         // CASE 3: Image.Asset
                         //var propertyName = nestedProperty.GetCustomAttribute<JsonPropertyAttribute>()?.PropertyName ?? nestedProperty.Name.ToCamelCase();
-                        var fields = GetPropertyProjectionList(propertyType);
-                        var nestedFields = GetPropertyProjectionList(sanityImageAssetProperty.PropertyType);
+                        var fields = GetPropertyProjectionList(propertyType, nestingLevel, maxNestingLevel);
+                        var nestedFields = GetPropertyProjectionList(sanityImageAssetProperty.PropertyType, nestingLevel, maxNestingLevel);
 
                         // Nested Reference
                         var fieldList = fields.Select(f => f.StartsWith("asset") ? $"asset->{(nestedFields.Count > 0 ? ("{" + nestedFields.Aggregate((a, b) => a + "," + b) + "}") : "")}" : f).Aggregate((c, n) => c + "," + n);
@@ -674,9 +681,9 @@ namespace Sanity.Linq
                         {
                             // CASE 4: Property->SanityReference<T> (generalization of Case 3)
                             var propertyName = nestedSanityReferenceProperty.GetCustomAttribute<JsonPropertyAttribute>()?.PropertyName ?? nestedSanityReferenceProperty.Name.ToCamelCase();
-                            var fields = GetPropertyProjectionList(propertyType);
+                            var fields = GetPropertyProjectionList(propertyType, nestingLevel, maxNestingLevel);
                             var elementType = nestedSanityReferenceProperty.PropertyType.GetGenericArguments()[0];
-                            var nestedFields = GetPropertyProjectionList(elementType);
+                            var nestedFields = GetPropertyProjectionList(elementType, nestingLevel+1, maxNestingLevel);
 
                             // Nested Reference
                             var fieldList = fields.Select(f => f == propertyName ? $"{propertyName}->{(nestedFields.Count > 0 ? ("{" + nestedFields.Aggregate((a, b) => a + "," + b) + "}") : "")}" : f).Aggregate((c, n) => c + "," + n);
@@ -692,10 +699,10 @@ namespace Sanity.Linq
                             {
                                 // CASE 5: Property->List<SanityReference<T>>
                                 var propertyName = nestedListOfSanityReferenceType.GetCustomAttribute<JsonPropertyAttribute>()?.PropertyName ?? nestedListOfSanityReferenceType.Name.ToCamelCase();
-                                var fields = GetPropertyProjectionList(propertyType);
+                                var fields = GetPropertyProjectionList(propertyType, nestingLevel, maxNestingLevel);
                                 var collectionType = nestedListOfSanityReferenceType.PropertyType.GetGenericArguments()[0];
                                 var elementType = collectionType.GetGenericArguments()[0];
-                                var nestedFields = GetPropertyProjectionList(elementType);
+                                var nestedFields = GetPropertyProjectionList(elementType, nestingLevel+1, maxNestingLevel);
 
                                 // Nested Reference
                                 var fieldList = fields.Select(f => f == propertyName ? $"{propertyName}[]->{(nestedFields.Count > 0 ? ("{" + nestedFields.Aggregate((a, b) => a + "," + b) + "}") : "")}" : f).Aggregate((c, n) => c + "," + n);
@@ -711,7 +718,7 @@ namespace Sanity.Linq
                                 {
                                     // CASE 6: Array of objects with "asset" field (e.g. images)                                    
                                     var elementType = listOfSanityImagesType.GetGenericArguments()[0];                                    
-                                    var fields = GetPropertyProjectionList(elementType);
+                                    var fields = GetPropertyProjectionList(elementType, nestingLevel, maxNestingLevel);
 
 
                                     // Nested Reference
@@ -732,7 +739,7 @@ namespace Sanity.Linq
                 if (isEnumerable)
                 {
                     var elemType = enumerableType.GetGenericArguments()[0];
-                    var fields = GetPropertyProjectionList(elemType);
+                    var fields = GetPropertyProjectionList(elemType, nestingLevel, maxNestingLevel);
                     if (fields.Count > 0)
                     {
                         // Other strongly typed includes
@@ -755,7 +762,7 @@ namespace Sanity.Linq
                 }
                 else
                 {
-                    var fields = GetPropertyProjectionList(propertyType);
+                    var fields = GetPropertyProjectionList(propertyType, nestingLevel, maxNestingLevel);
                     if (fields.Count > 0)
                     {
                         // Other strongly typed includes
@@ -802,7 +809,7 @@ namespace Sanity.Linq
 
 
 
-            public virtual string Build(bool includeProjections)
+            public virtual string Build(bool includeProjections, int maxNestingLevel)
             {
                 var sb = new StringBuilder();
                 // Select all
@@ -829,7 +836,7 @@ namespace Sanity.Linq
                 if (Constraints.Count > 0)
                 {
                     sb.Append("[");
-                    sb.Append(Constraints.Aggregate((c, n) => $"({c}) && ({n})"));
+                    sb.Append(Constraints.Distinct().Aggregate((c, n) => $"({c}) && ({n})"));
                     sb.Append("]");
                 }
 
@@ -860,7 +867,7 @@ namespace Sanity.Linq
                     if (string.IsNullOrEmpty(projection))
                     {
                         // Joins require an explicit projection
-                        var propertyList = GetPropertyProjectionList(ResultType);
+                        var propertyList = GetPropertyProjectionList(ResultType, 0, maxNestingLevel);
                         if (propertyList.Count > 0)
                         {
                             // Strongly typed case

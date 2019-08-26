@@ -34,7 +34,7 @@ namespace Sanity.Linq.Mutations
                 throw new ArgumentException("Query field must be set", nameof(query));
             }
 
-            var parser = new SanityExpressionParser(query, typeof(TDoc));
+            var parser = new SanityExpressionParser(query, typeof(TDoc), MutationQuerySettings.MAX_NESTING_LEVEL);
             var sanityQuery = parser.BuildQuery();
             Query = sanityQuery;
         }
@@ -46,7 +46,7 @@ namespace Sanity.Linq.Mutations
                 throw new ArgumentException("Query field must be set", nameof(query));
             }
 
-            var parser = new SanityExpressionParser(query, typeof(TDoc));
+            var parser = new SanityExpressionParser(query, typeof(TDoc), MutationQuerySettings.MAX_NESTING_LEVEL);
             var sanityQuery = parser.BuildQuery();
             Query = sanityQuery;
         }
@@ -54,6 +54,7 @@ namespace Sanity.Linq.Mutations
 
     public class SanityPatchByQuery : SanityPatch
     {
+
         public SanityPatchByQuery()
         {
         }
@@ -65,7 +66,7 @@ namespace Sanity.Linq.Mutations
                 throw new ArgumentException("Query field must be set", nameof(query));
             }
 
-            var parser = new SanityExpressionParser(query, typeof(object));
+            var parser = new SanityExpressionParser(query, typeof(object), MutationQuerySettings.MAX_NESTING_LEVEL);
             var sanityQuery = parser.BuildQuery();
             Query = sanityQuery;
         }

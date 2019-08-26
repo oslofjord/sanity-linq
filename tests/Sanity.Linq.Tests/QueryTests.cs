@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Sanity.Linq.Extensions;
 
 namespace Sanity.Linq.Tests
 {
@@ -44,6 +45,7 @@ namespace Sanity.Linq.Tests
             // Chained mutations
             categories.Create(category1).Create(category2).Create(category3);
 
+            
             // Create new author
             var author = new Author
             {
@@ -115,6 +117,12 @@ namespace Sanity.Linq.Tests
             // Save all changes in one transaction
             var result = await sanity.CommitAsync();
 
+
+            // Retreive all categories (recursive structure)
+            var allCategories = await sanity.DocumentSet<Category>().ToListAsync();
+            Assert.True(allCategories.Count >= 3);
+
+
             // LINQ Query
             var count = (sanity.DocumentSet<Post>().Count());
             var query = sanity.DocumentSet<Post>()
@@ -128,7 +136,7 @@ namespace Sanity.Linq.Tests
             // Execute Query
             var results = await query.ToListAsync();
 
-            sanity.DocumentSet<Post>().Select(p => new { p.Title, p.Author.Value.Name });
+            var transformedResult = sanity.DocumentSet<Post>().Where(p => !p.IsDraft()).Select(p => new { p.Title, p.Author.Value.Name }).ToList();
 
             Assert.True(count > 0);
             Assert.True(results.Count > 0);
