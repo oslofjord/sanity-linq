@@ -30,7 +30,10 @@ namespace Sanity.Linq.CommonTypes
         }
 
         [JsonProperty("_ref")]
-        public string Ref { get; set; } 
+        public string Ref { get; set; }
+
+        [JsonProperty("_weak")]
+        public bool? Weak { get; set; }
 
         [JsonIgnore]
         public T Value { get; set; }
