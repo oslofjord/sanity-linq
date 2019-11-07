@@ -39,6 +39,9 @@ namespace Sanity.Linq.CommonTypes
         [JsonProperty("_rev")]
         public string SanityRevision { get; set; }
 
+        [JsonProperty("_key")]
+        public string SanityKey { get; set; }
+
         [JsonProperty("_createdAt")]
         public DateTimeOffset? SanityCreatedAt { get; set; }
 
