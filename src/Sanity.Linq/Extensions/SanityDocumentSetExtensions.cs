@@ -26,6 +26,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Sanity.Linq
@@ -55,7 +56,7 @@ namespace Sanity.Linq
             }
         }
 
-        public static async Task<List<T>> ToListAsync<T>(this IQueryable<T> source)
+        public static async Task<List<T>> ToListAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default)
         {
             if (source == null)
             {
@@ -64,7 +65,7 @@ namespace Sanity.Linq
 
             if (source is SanityDocumentSet<T> dbSet)
             {
-                return (await dbSet.ExecuteAsync().ConfigureAwait(false)).ToList();
+                return (await dbSet.ExecuteAsync(cancellationToken).ConfigureAwait(false)).ToList();
             }
             else
             {
@@ -72,7 +73,7 @@ namespace Sanity.Linq
             }
         }
 
-        public static async Task<T[]> ToArrayAsync<T>(this IQueryable<T> source)
+        public static async Task<T[]> ToArrayAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default)
         {
             if (source == null)
             {
@@ -81,7 +82,7 @@ namespace Sanity.Linq
 
             if (source is SanityDocumentSet<T> dbSet)
             {
-                return (await dbSet.ExecuteAsync().ConfigureAwait(false)).ToArray();
+                return (await dbSet.ExecuteAsync(cancellationToken).ConfigureAwait(false)).ToArray();
             }
             else
             {
@@ -89,7 +90,7 @@ namespace Sanity.Linq
             }
         }
 
-        public static async Task<T> FirstOrDefaultAsync<T>(this IQueryable<T> source)
+        public static async Task<T> FirstOrDefaultAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default)
         {
             if (source == null)
             {
@@ -98,7 +99,7 @@ namespace Sanity.Linq
 
             if (source is SanityDocumentSet<T> dbSet)
             {
-                return (await dbSet.ExecuteAsync().ConfigureAwait(false)).FirstOrDefault();
+                return (await dbSet.Take(1).ExecuteSingleAsync(cancellationToken).ConfigureAwait(false));
             }
             else
             {
@@ -106,7 +107,7 @@ namespace Sanity.Linq
             }
         }
 
-        public static async Task<int> CountAsync<T>(this IQueryable<T> source)
+        public static async Task<IEnumerable<T>> ExecuteAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default)
         {
             if (source == null)
             {
@@ -115,7 +116,7 @@ namespace Sanity.Linq
 
             if (source is SanityDocumentSet<T> dbSet)
             {
-                return (await dbSet.ExecuteCountAsync().ConfigureAwait(false));
+                return await dbSet.ExecuteAsync(cancellationToken).ConfigureAwait(false);
             }
             else
             {
@@ -123,7 +124,7 @@ namespace Sanity.Linq
             }
         }
 
-        public static async Task<long> LongCountAsync<T>(this IQueryable<T> source)
+        public static async Task<T> ExecuteSingleAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default)
         {
             if (source == null)
             {
@@ -132,7 +133,41 @@ namespace Sanity.Linq
 
             if (source is SanityDocumentSet<T> dbSet)
             {
-                return (await dbSet.ExecuteLongCountAsync().ConfigureAwait(false));
+                return await dbSet.ExecuteSingleAsync(cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+            }
+        }
+
+        public static async Task<int> CountAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            if (source is SanityDocumentSet<T> dbSet)
+            {
+                return (await dbSet.ExecuteCountAsync(cancellationToken).ConfigureAwait(false));
+            }
+            else
+            {
+                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+            }
+        }
+
+        public static async Task<long> LongCountAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            if (source is SanityDocumentSet<T> dbSet)
+            {
+                return (await dbSet.ExecuteLongCountAsync(cancellationToken).ConfigureAwait(false));
             }
             else
             {
@@ -278,38 +313,38 @@ namespace Sanity.Linq
             docs.Mutations.Clear();
         }
 
-        public static Task<SanityMutationResponse<TDoc>> CommitChangesAsync<TDoc>(this SanityDocumentSet<TDoc> docs, bool returnIds = false, bool returnDocuments = false, SanityMutationVisibility visibility = SanityMutationVisibility.Sync)
+        public static Task<SanityMutationResponse<TDoc>> CommitChangesAsync<TDoc>(this SanityDocumentSet<TDoc> docs, bool returnIds = false, bool returnDocuments = false, SanityMutationVisibility visibility = SanityMutationVisibility.Sync, CancellationToken cancellationToken = default)
         {
-            return docs.Context.CommitAsync<TDoc>(returnIds, returnDocuments, visibility);
+            return docs.Context.CommitAsync<TDoc>(returnIds, returnDocuments, visibility, cancellationToken);
         }
 
 
-        public static Task<SanityDocumentResponse<SanityImageAsset>> UploadAsync(this SanityDocumentSet<SanityImageAsset> images, Stream stream, string filename, string contentType = null, string label = null)
+        public static Task<SanityDocumentResponse<SanityImageAsset>> UploadAsync(this SanityDocumentSet<SanityImageAsset> images, Stream stream, string filename, string contentType = null, string label = null, CancellationToken cancellationToken = default)
         {
-            return images.Context.Client.UploadImageAsync(stream, filename, contentType, label);
+            return images.Context.Client.UploadImageAsync(stream, filename, contentType, label, cancellationToken);
         }
 
-        public static Task<SanityDocumentResponse<SanityImageAsset>> UploadAsync(this SanityDocumentSet<SanityImageAsset> images, FileInfo file, string filename, string contentType = null, string label = null)
+        public static Task<SanityDocumentResponse<SanityImageAsset>> UploadAsync(this SanityDocumentSet<SanityImageAsset> images, FileInfo file, string filename, string contentType = null, string label = null, CancellationToken cancellationToken = default)
         {
-            return images.Context.Client.UploadImageAsync(file, label);
+            return images.Context.Client.UploadImageAsync(file, label, cancellationToken);
         }
-        public static Task<SanityDocumentResponse<SanityImageAsset>> UploadAsync(this SanityDocumentSet<SanityImageAsset> images, Uri uri, string label = null)
+        public static Task<SanityDocumentResponse<SanityImageAsset>> UploadAsync(this SanityDocumentSet<SanityImageAsset> images, Uri uri, string label = null, CancellationToken cancellationToken = default)
         {
-            return images.Context.Client.UploadImageAsync(uri, label);
-        }
-
-        public static Task<SanityDocumentResponse<SanityFileAsset>> UploadAsync(this SanityDocumentSet<SanityFileAsset> images, Stream stream, string filename, string contentType = null, string label = null)
-        {
-            return images.Context.Client.UploadFileAsync(stream, filename, contentType, label);
+            return images.Context.Client.UploadImageAsync(uri, label, cancellationToken);
         }
 
-        public static Task<SanityDocumentResponse<SanityFileAsset>> UploadAsync(this SanityDocumentSet<SanityFileAsset> images, FileInfo file, string filename, string contentType = null, string label = null)
+        public static Task<SanityDocumentResponse<SanityFileAsset>> UploadAsync(this SanityDocumentSet<SanityFileAsset> images, Stream stream, string filename, string contentType = null, string label = null, CancellationToken cancellationToken = default)
         {
-            return images.Context.Client.UploadFileAsync(file, label);
+            return images.Context.Client.UploadFileAsync(stream, filename, contentType, label, cancellationToken);
         }
-        public static Task<SanityDocumentResponse<SanityFileAsset>> UploadAsync(this SanityDocumentSet<SanityFileAsset> images, Uri uri, string label = null)
+
+        public static Task<SanityDocumentResponse<SanityFileAsset>> UploadAsync(this SanityDocumentSet<SanityFileAsset> images, FileInfo file, string filename, string contentType = null, string label = null, CancellationToken cancellationToken = default)
         {
-            return images.Context.Client.UploadFileAsync(uri, label);
+            return images.Context.Client.UploadFileAsync(file, label, cancellationToken);
+        }
+        public static Task<SanityDocumentResponse<SanityFileAsset>> UploadAsync(this SanityDocumentSet<SanityFileAsset> images, Uri uri, string label = null, CancellationToken cancellationToken = default)
+        {
+            return images.Context.Client.UploadFileAsync(uri, label, cancellationToken);
         }
     }
 }

@@ -67,9 +67,11 @@ namespace Sanity.Linq
                 Visit(Expression);
             }
 
+
             // Build query
-            return QueryBuilder.Build(includeProjections, MaxNestingLevel);
-            
+            var query = QueryBuilder.Build(includeProjections, MaxNestingLevel);
+            return query;
+                        
         }
 
 

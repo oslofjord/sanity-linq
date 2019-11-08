@@ -27,6 +27,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Sanity.Linq
@@ -94,25 +95,31 @@ namespace Sanity.Linq
             get { return typeof(TDoc); }
         }
 
-        public async Task<IEnumerable<TDoc>> ExecuteAsync()
+        public async Task<IEnumerable<TDoc>> ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            var results = (await ((SanityQueryProvider)Provider).ExecuteAsync<IEnumerable<TDoc>>(Expression).ConfigureAwait(false)) ?? new TDoc[] { };
+            var results = (await ((SanityQueryProvider)Provider).ExecuteAsync<IEnumerable<TDoc>>(Expression, cancellationToken).ConfigureAwait(false)) ?? new TDoc[] { };
             return FilterResults(results);
         }
-        
-        public async Task<int> ExecuteCountAsync()
+
+        public async Task<TDoc> ExecuteSingleAsync(CancellationToken cancellationToken = default)
+        {
+            var result = (await ((SanityQueryProvider)Provider).ExecuteAsync<TDoc>(Expression, cancellationToken).ConfigureAwait(false));
+            return result;
+        }
+
+        public async Task<int> ExecuteCountAsync(CancellationToken cancellationToken = default)
         {
             var countMethod = TypeSystem.GetMethod(nameof(Queryable.Count)).MakeGenericMethod(typeof(TDoc));
             var exp = Expression.Call(null,countMethod, Expression);
-            return (await ((SanityQueryProvider)Provider).ExecuteAsync<int>(exp).ConfigureAwait(false));
+            return (await ((SanityQueryProvider)Provider).ExecuteAsync<int>(exp, cancellationToken).ConfigureAwait(false));
             
         }
 
-        public async Task<long> ExecuteLongCountAsync()
+        public async Task<long> ExecuteLongCountAsync(CancellationToken cancellationToken = default)
         {
             var countMethod = TypeSystem.GetMethod(nameof(Queryable.LongCount)).MakeGenericMethod(typeof(TDoc));
             var exp = Expression.Call(null, countMethod, Expression);
-            return (await ((SanityQueryProvider)Provider).ExecuteAsync<long>(exp).ConfigureAwait(false));
+            return (await ((SanityQueryProvider)Provider).ExecuteAsync<long>(exp, cancellationToken).ConfigureAwait(false));
 
         }
 
@@ -156,12 +163,12 @@ namespace Sanity.Linq
 
         public TDoc Get(string id)
         {
-            return GetAsync(id).Result;
+            return GetAsync(id).GetAwaiter().GetResult();
         }
 
-        public async Task<TDoc> GetAsync(string id)
+        public async Task<TDoc> GetAsync(string id, CancellationToken cancellationToken = default)
         {
-            return await this.Where(d => d.SanityId() == id).FirstOrDefaultAsync().ConfigureAwait(false);
+            return await this.Where(d => d.SanityId() == id).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public SanityMutationBuilder<TDoc> Mutations

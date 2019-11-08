@@ -32,6 +32,7 @@ using Sanity.Linq.DTOs;
 using Sanity.Linq.CommonTypes;
 using Sanity.Linq.Mutations;
 using Sanity.Linq.BlockContent;
+using System.Threading;
 
 namespace Sanity.Linq
 {
@@ -125,9 +126,9 @@ namespace Sanity.Linq
         /// <param name="returnDocuments"></param>
         /// <param name="visibility"></param>
         /// <returns></returns>
-        public async Task<SanityMutationResponse> CommitAsync(bool returnIds = false, bool returnDocuments = false, SanityMutationVisibility visibility = SanityMutationVisibility.Sync)
+        public async Task<SanityMutationResponse> CommitAsync(bool returnIds = false, bool returnDocuments = false, SanityMutationVisibility visibility = SanityMutationVisibility.Sync, CancellationToken cancellationToken = default)
         {
-            var result = await Client.CommitMutationsAsync(Mutations.Build(Client.SerializerSettings), returnIds, returnDocuments, visibility).ConfigureAwait(false);
+            var result = await Client.CommitMutationsAsync(Mutations.Build(Client.SerializerSettings), returnIds, returnDocuments, visibility, cancellationToken).ConfigureAwait(false);
             Mutations.Clear();
             return result;
         }
@@ -139,12 +140,12 @@ namespace Sanity.Linq
         /// <param name="returnDocuments"></param>
         /// <param name="visibility"></param>
         /// <returns></returns>
-        public async Task<SanityMutationResponse<TDoc>> CommitAsync<TDoc>(bool returnIds = false, bool returnDocuments = false, SanityMutationVisibility visibility = SanityMutationVisibility.Sync)
+        public async Task<SanityMutationResponse<TDoc>> CommitAsync<TDoc>(bool returnIds = false, bool returnDocuments = false, SanityMutationVisibility visibility = SanityMutationVisibility.Sync, CancellationToken cancellationToken = default)
         {
             var mutations = Mutations.For<TDoc>();
             if (mutations.Mutations.Count > 0)
             {
-                var result = await Client.CommitMutationsAsync<TDoc>(mutations.Build(), returnIds, returnDocuments, visibility).ConfigureAwait(false);
+                var result = await Client.CommitMutationsAsync<TDoc>(mutations.Build(), returnIds, returnDocuments, visibility, cancellationToken).ConfigureAwait(false);
                 mutations.Clear();
                 return result;
             }

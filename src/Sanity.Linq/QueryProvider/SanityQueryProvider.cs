@@ -23,6 +23,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Sanity.Linq.Extensions;
@@ -81,12 +82,12 @@ namespace Sanity.Linq
             return parser.BuildQuery();
         }
 
-        public async Task<TResult> ExecuteAsync<TResult>(Expression expression)
+        public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
             var query = GetSanityQuery<TResult>(expression);          
 
             // Execute query
-            var result = await Context.Client.FetchAsync<TResult>(query).ConfigureAwait(false);
+            var result = await Context.Client.FetchAsync<TResult>(query, null, cancellationToken).ConfigureAwait(false);
 
             return result.Result;
 

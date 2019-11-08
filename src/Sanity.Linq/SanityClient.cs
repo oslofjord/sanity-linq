@@ -30,6 +30,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Sanity.Linq
@@ -94,7 +95,7 @@ namespace Sanity.Linq
 
         }
 
-        public virtual async Task<SanityQueryResponse<TResult>> FetchAsync<TResult>(string query, object parameters = null)
+        public virtual async Task<SanityQueryResponse<TResult>> FetchAsync<TResult>(string query, object parameters = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(query))
             {
@@ -114,48 +115,48 @@ namespace Sanity.Linq
                 {
                     //TODO: Add support for parameters
                 }
-                response = await _httpQueryClient.GetAsync(url);
+                response = await _httpQueryClient.GetAsync(url, cancellationToken);
             }
             else
             {
                 // Preferred method is POST
                 var json = new StringContent(JsonConvert.SerializeObject(oQuery, Formatting.None, SerializerSettings), Encoding.UTF8, "application/json");
-                response = await _httpQueryClient.PostAsync($"data/query/{WebUtility.UrlEncode(_options.Dataset)}", json).ConfigureAwait(false);
+                response = await _httpQueryClient.PostAsync($"data/query/{WebUtility.UrlEncode(_options.Dataset)}", json, cancellationToken).ConfigureAwait(false);
             }
 
             return await HandleHttpResponseAsync<SanityQueryResponse<TResult>>(response).ConfigureAwait(false);
         }
 
-        public virtual async Task<SanityDocumentsResponse<TDoc>> GetDocumentAsync<TDoc>(string id)
+        public virtual async Task<SanityDocumentsResponse<TDoc>> GetDocumentAsync<TDoc>(string id, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(id))
             {
                 throw new ArgumentException("Id cannot be empty", nameof(id));
             }
-            var response = await _httpQueryClient.GetAsync($"data/doc/{WebUtility.UrlEncode(_options.Dataset)}/{WebUtility.UrlEncode(id)}").ConfigureAwait(false);
+            var response = await _httpQueryClient.GetAsync($"data/doc/{WebUtility.UrlEncode(_options.Dataset)}/{WebUtility.UrlEncode(id)}", cancellationToken).ConfigureAwait(false);
             return await HandleHttpResponseAsync<SanityDocumentsResponse<TDoc>>(response).ConfigureAwait(false);
         }
 
-        public virtual async Task<SanityDocumentResponse<SanityImageAsset>> UploadImageAsync(FileInfo image, string label =null)
+        public virtual async Task<SanityDocumentResponse<SanityImageAsset>> UploadImageAsync(FileInfo image, string label = null, CancellationToken cancellationToken = default)
         {
             var mimeType = MimeTypeMap.GetMimeType(image.Extension);
             using (var fs = image.OpenRead())
             {
-                return await UploadImageAsync(fs, image.Name, mimeType, label).ConfigureAwait(false);
+                return await UploadImageAsync(fs, image.Name, mimeType, label, cancellationToken).ConfigureAwait(false);
             }            
         }
 
-        public virtual async Task<SanityDocumentResponse<SanityFileAsset>> UploadFileAsync(FileInfo file, string label = null)
+        public virtual async Task<SanityDocumentResponse<SanityFileAsset>> UploadFileAsync(FileInfo file, string label = null, CancellationToken cancellationToken = default)
         {
             var mimeType = MimeTypeMap.GetMimeType(file.Extension);
             using (var fs = file.OpenRead())
             {
-                return await UploadFileAsync(fs, file.Name, mimeType, label).ConfigureAwait(false);
+                return await UploadFileAsync(fs, file.Name, mimeType, label, cancellationToken).ConfigureAwait(false);
             }
         }
 
 
-        public virtual async Task<SanityDocumentResponse<SanityImageAsset>> UploadImageAsync(Stream stream, string fileName, string contentType = null, string label = null)
+        public virtual async Task<SanityDocumentResponse<SanityImageAsset>> UploadImageAsync(Stream stream, string fileName, string contentType = null, string label = null, CancellationToken cancellationToken = default)
         {
             var query = new List<string>();
             if (!string.IsNullOrEmpty(fileName))
@@ -175,11 +176,11 @@ namespace Sanity.Linq
                 request.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
             }           
 
-            var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
+            var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             return await HandleHttpResponseAsync<SanityDocumentResponse<SanityImageAsset>>(response).ConfigureAwait(false);
         }
 
-        public virtual async Task<SanityDocumentResponse<SanityFileAsset>> UploadFileAsync(Stream stream, string fileName, string contentType = null, string label = null)
+        public virtual async Task<SanityDocumentResponse<SanityFileAsset>> UploadFileAsync(Stream stream, string fileName, string contentType = null, string label = null, CancellationToken cancellationToken = default)
         {
             var query = new List<string>();
             if (!string.IsNullOrEmpty(fileName))
@@ -199,21 +200,21 @@ namespace Sanity.Linq
                 request.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
             }
 
-            var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
+            var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             return await HandleHttpResponseAsync<SanityDocumentResponse<SanityFileAsset>>(response).ConfigureAwait(false);
         }
 
-        public virtual Task<SanityMutationResponse> CommitMutationsAsync(object mutations, bool returnIds = false, bool returnDocuments = true, SanityMutationVisibility visibility = SanityMutationVisibility.Sync)
+        public virtual Task<SanityMutationResponse> CommitMutationsAsync(object mutations, bool returnIds = false, bool returnDocuments = true, SanityMutationVisibility visibility = SanityMutationVisibility.Sync, CancellationToken cancellationToken = default)
         {
-            return CommitMutationsInternalAsync<SanityMutationResponse>(mutations, returnIds, returnDocuments, visibility);
+            return CommitMutationsInternalAsync<SanityMutationResponse>(mutations, returnIds, returnDocuments, visibility, cancellationToken);
         }
 
-        public virtual Task<SanityMutationResponse<TDoc>> CommitMutationsAsync<TDoc>(object mutations, bool returnIds = false, bool returnDocuments = true, SanityMutationVisibility visibility = SanityMutationVisibility.Sync)
+        public virtual Task<SanityMutationResponse<TDoc>> CommitMutationsAsync<TDoc>(object mutations, bool returnIds = false, bool returnDocuments = true, SanityMutationVisibility visibility = SanityMutationVisibility.Sync, CancellationToken cancellationToken = default)
         {
-            return CommitMutationsInternalAsync<SanityMutationResponse<TDoc>>(mutations, returnIds, returnDocuments, visibility);
+            return CommitMutationsInternalAsync<SanityMutationResponse<TDoc>>(mutations, returnIds, returnDocuments, visibility, cancellationToken);
         }
 
-        protected virtual async Task<TResult> CommitMutationsInternalAsync<TResult>(object mutations, bool returnIds = false, bool returnDocuments = false, SanityMutationVisibility visibility = SanityMutationVisibility.Sync)
+        protected virtual async Task<TResult> CommitMutationsInternalAsync<TResult>(object mutations, bool returnIds = false, bool returnDocuments = false, SanityMutationVisibility visibility = SanityMutationVisibility.Sync, CancellationToken cancellationToken = default)
         {
             if (mutations == null)
             {
@@ -224,7 +225,7 @@ namespace Sanity.Linq
                        mutations is SanityMutationBuilder ? ((SanityMutationBuilder)mutations).Build(SerializerSettings) : 
                        JsonConvert.SerializeObject(mutations, Formatting.None, SerializerSettings);
 
-            var response = await _httpClient.PostAsync($"data/mutate/{WebUtility.UrlEncode(_options.Dataset)}?returnIds={returnIds.ToString().ToLower()}&returnDocuments={returnDocuments.ToString().ToLower()}&visibility={visibility.ToString().ToLower()}", new StringContent(json, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+            var response = await _httpClient.PostAsync($"data/mutate/{WebUtility.UrlEncode(_options.Dataset)}?returnIds={returnIds.ToString().ToLower()}&returnDocuments={returnDocuments.ToString().ToLower()}&visibility={visibility.ToString().ToLower()}", new StringContent(json, Encoding.UTF8, "application/json"), cancellationToken).ConfigureAwait(false);
             return await HandleHttpResponseAsync<TResult>(response).ConfigureAwait(false);
         }
 
