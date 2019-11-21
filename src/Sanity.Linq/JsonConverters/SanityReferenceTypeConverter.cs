@@ -51,6 +51,7 @@ namespace Sanity.Linq
                     objectType.GetProperty(nameof(SanityReference<object>.Ref)).SetValue(res, obj.GetValue("_id")?.ToString());
                     objectType.GetProperty(nameof(SanityReference<object>.SanityType)).SetValue(res, "reference");
                     objectType.GetProperty(nameof(SanityReference<object>.SanityKey)).SetValue(res, obj.GetValue("_key"));
+                    objectType.GetProperty(nameof(SanityReference<object>.Weak)).SetValue(res, obj.GetValue("_weak"));
                     objectType.GetProperty(nameof(SanityReference<object>.Value)).SetValue(res, serializer.Deserialize(new StringReader(obj.ToString()), elemType));
                     return res;
                 }
@@ -86,20 +87,13 @@ namespace Sanity.Linq
 
                 // Get _key property (required for arrays in sanity editor)
                 var keyProp = type.GetProperties().FirstOrDefault(p => p.Name.ToLower() == "_key" || ((p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName?.Equals("_key")).GetValueOrDefault());
-                string valKey = "";
-                if (keyProp != null)
-                {
-                    valKey = keyProp.GetValue(value) as string;
-                }
-                else
-                {
-                    // Generate random key if _key not found
-                    valKey = Guid.NewGuid().ToString();
-                }
+                var weakProp = type.GetProperties().FirstOrDefault(p => p.Name.ToLower() == "_weak" || ((p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName?.Equals("_weak")).GetValueOrDefault());
+                var valKey = keyProp?.GetValue(value) as string ?? Guid.NewGuid().ToString();
+                var valWeak = weakProp?.GetValue(value) as bool? ?? null;
 
                 if (!string.IsNullOrEmpty(valRef))
                 {
-                    serializer.Serialize(writer, new { _ref = valRef, _type = "reference", _key = valKey });
+                    serializer.Serialize(writer, new { _ref = valRef, _type = "reference", _key = valKey, _weak = valWeak });
                     return;
                 }
             }
