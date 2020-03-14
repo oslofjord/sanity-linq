@@ -21,9 +21,15 @@ namespace Sanity.Linq.Demo.Model
         [JsonProperty("_type")]
         public string DocumentType => "category";
 
+        public int InternalId { get; set; }
+
         public string Title { get; set; }
 
         public string Description { get; set; }
+
+        public string[] Tags { get; set; } = new string[0];
+
+        public int[] Numbers { get; set; } = new int[0];
 
         public List<Category> SubCategories { get; set; }
 

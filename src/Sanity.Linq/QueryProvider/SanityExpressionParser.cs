@@ -22,6 +22,7 @@ using Sanity.Linq.CommonTypes;
 using Sanity.Linq.Extensions;
 using Sanity.Linq.Internal;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -198,6 +199,69 @@ namespace Sanity.Linq
                         }
 
                         return $"{memberName} match \"{value}*\"";
+                    }
+                case "Contains":
+                    {
+                        // CASE 1: .Where(p => titles.Contains(p.Title))
+                        // *[title in ["Aliens", "Interstellar", "Passengers"]]
+                        if (e.Object is ConstantExpression &&
+                            e.Object.Type != typeof(string) &&
+                            e.Object.Type.GetInterfaces().Any(i => i == typeof(IEnumerable)) &&
+                            e.Arguments.Count == 1 &&
+                            e.Arguments[0] is MemberExpression
+                        )
+                        {
+
+                            var memberName = TransformOperand(e.Arguments[0]);
+                            var values = ((IEnumerable)((ConstantExpression)e.Object).Value)?.Cast<object>()?.Where(o => o != null)?.ToArray();
+                            if (values.Length == 0 || values == null)
+                            {
+                                return $"{memberName} in []";
+                            }
+                            else
+                            {
+                                if (values[0].GetType() == typeof(string) || values[0].GetType() == typeof(Guid))
+                                {
+                                    return $"{memberName} in [\"{string.Join("\",\"", values)}\"]";
+                                }
+                                else
+                                {
+                                    return $"{memberName} in [{string.Join(",", values)}]";
+                                }
+                            }
+                        }
+                        // .Where(p => p.Tags.Contains("Alians"))
+                        // *[tags[] match "Aliens"]
+                        else if (
+                            e.Arguments.Count == 2 &&
+                            e.Arguments[0] is MemberExpression &&
+                            e.Arguments[1] is ConstantExpression
+                        )
+                        {
+                            var memberName = TransformOperand(e.Arguments[0]);
+                            var value = ((ConstantExpression)e.Arguments[1]).Value?.ToString();
+                            if (value != null)
+                            {
+                                if (e.Arguments[1].Type == typeof(string) || e.Arguments[1].Type == typeof(Guid))
+                                {
+                                    return $"\"{value}\" in {memberName}";
+                                }
+                                else
+                                {
+                                    return $"{value} in {memberName}";
+                                }
+                            }
+                        }
+                        else if (e.Arguments.Count == 2 &&
+                            e.Arguments[0] is MemberExpression &&
+                            e.Arguments[1] is MemberExpression)
+                        {
+                            var memberName1 = TransformOperand(e.Arguments[0]);
+                            var memberName2 = TransformOperand(e.Arguments[1]);
+                            return $"{memberName2} in {memberName1}";
+                        }
+                        throw new Exception("'Contains' is only supported for simple expressions with non-null values.");
+                        
                     }
                 case "GetValue`1":
                 case "GetValue":

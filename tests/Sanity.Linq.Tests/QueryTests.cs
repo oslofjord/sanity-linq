@@ -13,6 +13,75 @@ namespace Sanity.Linq.Tests
     public class QueryTests : TestBase
     {
         [Fact]
+        public async Task Contains_Test()
+        {
+
+            var sanity = new SanityDataContext(Options);
+            await ClearAllDataAsync(sanity);
+            var categories = sanity.DocumentSet<Category>();
+
+            // Create categoriues
+            var category1 = new Category
+            {
+                CategoryId = Guid.NewGuid().ToString(),
+                Description = "Some of world's greatest conventions!",
+                Tags = new[] { "One", "Two", "Three" },
+                Numbers = new[] { 1, 2, 3 },
+                Title = "Conventions",
+                InternalId = 1
+            };
+            var category2 = new Category
+            {
+                CategoryId = Guid.NewGuid().ToString(),
+                Description = "Some of world's greatest events!",
+                Tags = new[] { "Four", "Five", "Six" },
+                Numbers = new[] { 4, 5, 6 },
+                Title = "Events",
+                InternalId = 2
+            };
+            var category3 = new Category
+            {
+                CategoryId = Guid.NewGuid().ToString(),
+                Description = "Some of world's greatest festivals!",
+                Tags = new[] { "Seven", "Eight", "Nine" },
+                Numbers = new[] { 7, 8, 9 },
+                Title = "Festivals",
+                InternalId = 3
+            };
+            await categories
+                    .Create(category1)
+                    .Create(category2)
+                    .Create(category3)
+                    .CommitAsync();
+
+            // Test 1
+            // *[title in ["Conventions", "Festivals"]]
+            // .Where(p => ids.Contains(p.Id))
+
+            var namesToFind = new List<string> { "Conventions", "Festivals" };
+            var result1 = await categories.Where(c => namesToFind.Contains(c.Title)).ToListAsync();
+            Assert.True(result1.Count == 2);
+
+            var ïdsToFind = new List<int> { 1, 2 };
+            var result2 = await categories.Where(c => ïdsToFind.Contains(c.InternalId)).ToListAsync();
+            Assert.True(result2.Count == 2);
+
+
+            // Test 2
+            // *["Two" in tags]
+            // .Where(p => p.Ids.Contains(ids))
+            var result3 = await categories.Where(c => c.Tags.Contains("Two")).ToListAsync();
+            Assert.True( result3.Count == 1);
+
+            var result4 = await categories.Where(c => c.Numbers.Contains(3)).ToListAsync();
+            Assert.True(result4.Count == 1);
+
+            var result5 = await categories.Where(c => c.Numbers.Contains(c.InternalId)).ToListAsync();
+            Assert.True(result5.Count == 1);
+
+        }
+
+        [Fact]
         public async Task CRUD_Test()
         {
 
