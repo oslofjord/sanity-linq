@@ -38,14 +38,16 @@ namespace Sanity.Linq
     public class SanityClient
     {
         protected SanityOptions _options;
+        private IHttpClientFactory _factory;
         private HttpClient _httpQueryClient;
         private HttpClient _httpClient;
 
         public JsonSerializerSettings SerializerSettings { get; }
 
-        public SanityClient(SanityOptions options, JsonSerializerSettings serializerSettings = null)
+        public SanityClient(SanityOptions options, JsonSerializerSettings serializerSettings = null, IHttpClientFactory clientFactory = null)
         {
             _options = options;
+            _factory = clientFactory;
             SerializerSettings = serializerSettings ?? new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver(),
@@ -60,7 +62,7 @@ namespace Sanity.Linq
             // Initialize serialization settings
 
             // Initialize query client
-            _httpQueryClient = new HttpClient();
+            _httpQueryClient = _factory?.CreateClient() ?? new HttpClient();
             _httpQueryClient.DefaultRequestHeaders.Accept.Clear();
             _httpQueryClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             if (_options.UseCdn)
@@ -83,7 +85,7 @@ namespace Sanity.Linq
             }
             else
             {
-                _httpClient = new HttpClient();
+                _httpClient = _factory?.CreateClient() ?? new HttpClient();
                 _httpClient.DefaultRequestHeaders.Accept.Clear();
                 _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 _httpClient.BaseAddress = new Uri($"https://{WebUtility.UrlEncode(_options.ProjectId)}.api.sanity.io/v1/");

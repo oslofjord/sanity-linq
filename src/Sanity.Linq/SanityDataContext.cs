@@ -61,7 +61,7 @@ namespace Sanity.Linq
         /// </summary>
         /// <param name="options"></param>
         /// <param name="isShared">Indicates that the context can be used by multiple SanityDocumentSets</param>
-        public SanityDataContext(SanityOptions options, JsonSerializerSettings serializerSettings = null, SanityHtmlBuilderOptions htmlBuilderOptions = null)
+        public SanityDataContext(SanityOptions options, JsonSerializerSettings serializerSettings = null, SanityHtmlBuilderOptions htmlBuilderOptions = null, IHttpClientFactory clientFactory = null)
         {
             if (options == null)
             {
@@ -73,7 +73,7 @@ namespace Sanity.Linq
                 NullValueHandling = NullValueHandling.Ignore,
                 Converters = new List<JsonConverter> { new SanityReferenceTypeConverter() }
             };
-            Client = new SanityClient(options, serializerSettings);
+            Client = new SanityClient(options, serializerSettings, clientFactory);
             Mutations = new SanityMutationBuilder(Client);
             HtmlBuilder = new SanityHtmlBuilder(options, null, SerializerSettings, htmlBuilderOptions);
         }
