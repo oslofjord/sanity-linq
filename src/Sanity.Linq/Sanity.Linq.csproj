@@ -4,17 +4,17 @@ Copywrite 2018 Oslofjord Operations AS
 This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
 
  Sanity LINQ is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
+ it under the terms of the MIT Licence.
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
 
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
- GNU General Public License for more details.
+ MIT Licence for more details.
 
- You should have received a copy of the GNU General Public License
- along with this program.If not, see<https://www.gnu.org/licenses/>.
+ You should have received a copy of the MIT Licence
+ along with this program.
 
 -->
 
@@ -26,20 +26,20 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
     <Authors>Oslofjord Operations AS</Authors>
     <Company>Oslofjord Operations AS</Company>
     <Product>Sanity LINQ</Product>
-    <Version>1.4.2</Version>
+    <Version>1.4.3</Version>
     <Description>Strongly-typed .Net Client for Sanity CMS (https://sanity.io)</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Copyright>2019 Oslofjord Operations AS</Copyright>
+    <Copyright>2018 Oslofjord Operations AS</Copyright>
     <PackageProjectUrl>https://github.com/oslofjord/sanity-linq</PackageProjectUrl>
     <RepositoryUrl>https://github.com/oslofjord/sanity-linq</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>sanity cms dotnet linq client groq</PackageTags>
     <PackageLicenseUrl>https://raw.githubusercontent.com/oslofjord/sanity-linq/master/LICENSE</PackageLicenseUrl>
-    <AssemblyVersion>1.4.2.0</AssemblyVersion>
+    <AssemblyVersion>1.4.3.0</AssemblyVersion>
     <PackageId>Sanity.Linq</PackageId>
     <AssemblyName>Sanity.Linq</AssemblyName>
     <RootNamespace>Sanity.Linq</RootNamespace>
-    <FileVersion>1.4.2.0</FileVersion>
+    <FileVersion>1.4.3.0</FileVersion>
     <PackageReleaseNotes>1.0 - Sanity Linq library
 1.1 - BlockContent library
 1.1.1 - Improvements BlockContent
@@ -55,7 +55,8 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
 1.3.9 - Added support for sanity _key field to SanityDocument common type
 1.4.0 - Support for cancellation tokens
 1.4.1 - Bugfix for weak references
-1.4.2 -Support for "Contains" queries</PackageReleaseNotes>
+1.4.2 -Support for "Contains" queries
+1.4.3 - Support for IHttpClientFactory</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
