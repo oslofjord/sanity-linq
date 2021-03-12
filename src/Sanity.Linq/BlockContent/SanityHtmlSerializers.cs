@@ -10,7 +10,7 @@ namespace Sanity.Linq.BlockContent
     public class SanityHtmlSerializers
     {
         // Sanity Default Serializers
-        public Task<string> SerializeDefaultBlockAsync(JToken input, SanityOptions sanity)
+        public Task<string> SerializeDefaultBlockAsync(JToken input, SanityOptions sanity, object context = null)
         {
             var text = new StringBuilder();
             var listStart = new StringBuilder();
@@ -102,7 +102,11 @@ namespace Sanity.Linq.BlockContent
                         var markDef = markDefs?.FirstOrDefault(m => m["_key"]?.ToString() == sMark);                       
                         if (markDef != null)
                         {
-                            if (markDef["_type"]?.ToString() == "link")
+                            if (TrySerializeMarkDef(markDef, context, ref start, ref end))
+                            {
+                                continue;
+                            }
+                            else if (markDef["_type"]?.ToString() == "link")
                             {
                                 start.Append($"<a target=\"_blank\" href=\"{markDef["href"]?.ToString()}\">");
                                 end.Append( "</a>");
@@ -135,6 +139,7 @@ namespace Sanity.Linq.BlockContent
 
             //return listStart + listItemStart + "<" + tag + ">" + text + "</" + tag + ">" + listItemEnd + listEnd;
         }
+
         public Task<string> SerializeImageAsync(JToken input, SanityOptions options)
         {
             var asset = input["asset"];
@@ -174,5 +179,7 @@ namespace Sanity.Linq.BlockContent
 
             return Task.FromResult(html);
         }
+
+        protected virtual bool TrySerializeMarkDef(JToken markDef, object context, ref StringBuilder start, ref StringBuilder end) => false;
     }
 }

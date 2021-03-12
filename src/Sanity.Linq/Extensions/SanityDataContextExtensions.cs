@@ -29,7 +29,12 @@ namespace Sanity.Linq
 {
     public static class SanityDataContextExtensions
     {
-        public static void AddHtmlSerializer(this SanityDataContext sanity, string type, Func<JToken, SanityOptions,Task<string>> serializer)
+        public static void AddHtmlSerializer(this SanityDataContext sanity, string type, Func<JToken, SanityOptions, Task<string>> serializer)
+        {
+            sanity.HtmlBuilder.AddSerializer(type, serializer);
+        }
+
+        public static void AddHtmlSerializer(this SanityDataContext sanity, string type, Func<JToken, SanityOptions,object,Task<string>> serializer)
         {
             sanity.HtmlBuilder.AddSerializer(type, serializer);
         }

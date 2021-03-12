@@ -280,22 +280,42 @@ namespace Sanity.Linq.Extensions
 
         public static Task<string> ToHtmlAsync(this object blockContent, SanityHtmlBuilder builder)
         {
-            return builder.BuildAsync(blockContent);
+            return blockContent.ToHtmlAsync(builder, null);
+        }
+
+        public static Task<string> ToHtmlAsync(this object blockContent, SanityHtmlBuilder builder, object buildContext = null)
+        {
+            return builder.BuildAsync(blockContent, buildContext);
         }
 
         public static string ToHtml(this object blockContent, SanityHtmlBuilder builder)
         {
-            return builder.BuildAsync(blockContent).Result;
+            return blockContent.ToHtml(builder, null);
+        }
+
+        public static string ToHtml(this object blockContent, SanityHtmlBuilder builder, object buildContext)
+        {
+            return builder.BuildAsync(blockContent, buildContext).Result;
         }
 
         public static Task<string> ToHtmlAsync(this object blockContent, SanityDataContext context)
         {
-            return context.HtmlBuilder.BuildAsync(blockContent);
+            return blockContent.ToHtmlAsync(context, null);
+        }
+
+        public static Task<string> ToHtmlAsync(this object blockContent, SanityDataContext context, object buildContext)
+        {
+            return context.HtmlBuilder.BuildAsync(blockContent, buildContext);
         }
 
         public static string ToHtml(this object blockContent, SanityDataContext context)
         {
-            return context.HtmlBuilder.BuildAsync(blockContent).Result;
+            return blockContent.ToHtml(context, null);
+        }
+
+        public static string ToHtml(this object blockContent, SanityDataContext context, object buildContext)
+        {
+            return context.HtmlBuilder.BuildAsync(blockContent, buildContext).Result;
         }
     }
 }
