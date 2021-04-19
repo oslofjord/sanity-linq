@@ -22,7 +22,7 @@ namespace Sanity.Linq.Tests
             var htmlBuilder = new SanityHtmlBuilder(Options);
             foreach (var post in posts)
             {
-                var html = htmlBuilder.BuildAsync(post.Body); // the serialized data
+                var html = htmlBuilder.BuildAsync(post.Body, null); // the serialized data
             }
         }
 
