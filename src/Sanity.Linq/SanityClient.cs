@@ -191,7 +191,7 @@ namespace Sanity.Linq
             {
                 query.Add($"label={WebUtility.UrlEncode(label)}");
             }
-            var uri = $"assets/images/{WebUtility.UrlEncode(_options.Dataset)}{(query.Count > 0 ? "?" + query.Aggregate((c, n) => c + "&" + n) : "")}";
+            var uri = $"assets/files/{WebUtility.UrlEncode(_options.Dataset)}{(query.Count > 0 ? "?" + query.Aggregate((c, n) => c + "&" + n) : "")}";
             var request = new HttpRequestMessage(HttpMethod.Post, uri);
 
             request.Content = new StreamContent(stream);
