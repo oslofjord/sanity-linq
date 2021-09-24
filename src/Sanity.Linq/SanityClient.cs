@@ -65,11 +65,11 @@ namespace Sanity.Linq
             _httpQueryClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             if (_options.UseCdn)
             {
-                _httpQueryClient.BaseAddress = new Uri($"https://{WebUtility.UrlEncode(_options.ProjectId)}.apicdn.sanity.io/v1/");
+                _httpQueryClient.BaseAddress = new Uri($"https://{WebUtility.UrlEncode(_options.ProjectId)}.apicdn.sanity.io/{_options.ApiVersion}/");
             }
             else
             {
-                _httpQueryClient.BaseAddress = new Uri($"https://{WebUtility.UrlEncode(_options.ProjectId)}.api.sanity.io/v1/");
+                _httpQueryClient.BaseAddress = new Uri($"https://{WebUtility.UrlEncode(_options.ProjectId)}.api.sanity.io/{_options.ApiVersion}/");
             }
             if (!string.IsNullOrEmpty(_options.Token) && !_options.UseCdn)
             {
@@ -86,7 +86,7 @@ namespace Sanity.Linq
                 _httpClient = _factory?.CreateClient() ?? new HttpClient();
                 _httpClient.DefaultRequestHeaders.Accept.Clear();
                 _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                _httpClient.BaseAddress = new Uri($"https://{WebUtility.UrlEncode(_options.ProjectId)}.api.sanity.io/v1/");
+                _httpClient.BaseAddress = new Uri($"https://{WebUtility.UrlEncode(_options.ProjectId)}.api.sanity.io/{_options.ApiVersion}/");
                 if (!string.IsNullOrEmpty(_options.Token))
                 {
                     _httpQueryClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.Token);

@@ -25,5 +25,7 @@ namespace Sanity.Linq
         public string Token { get; set; }
 
         public bool UseCdn { get; set; }
+
+        public string ApiVersion { get; set; } = "v1";
     }
 }
