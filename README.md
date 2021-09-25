@@ -36,7 +36,8 @@ var options = new SanityOptions
             ProjectId = "#your-project-id#",
             Dataset = "#your-dataset#",
             Token = "#your-token#",
-            UseCdn = false
+            UseCdn = false,
+            ApiVersion = "v1"
         };
 
 var sanity = new SanityDataContext(options);
