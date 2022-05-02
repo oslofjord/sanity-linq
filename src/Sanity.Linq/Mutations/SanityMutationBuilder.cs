@@ -35,12 +35,12 @@ namespace Sanity.Linq.Mutations
 
     public class SanityMutationBuilder<TDoc>
     {
-
         public SanityMutationBuilder(SanityMutationBuilder innerBuilder)
         {
             InnerBuilder = innerBuilder;
         }
 
+        [JsonIgnore()]
         public SanityMutationBuilder InnerBuilder { get; }
 
         public object GetLock() => InnerBuilder.GetLock();
