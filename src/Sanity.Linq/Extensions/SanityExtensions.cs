@@ -15,8 +15,6 @@
 
 using Sanity.Linq.CommonTypes;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Sanity.Linq.Extensions
 {
@@ -41,8 +39,10 @@ namespace Sanity.Linq.Extensions
                     }
                 default:
                     {
-                        // Remove Sanity from class name
-                        var name = type.Name.Replace("Sanity", "");
+                        // Remove Sanity and generic type marker from class name
+                        var name = type.Name
+                            .Replace("Sanity", "")
+                            .Replace("`1", "");
 
                         //Make first letter lowercase (i.e. camelCase)
                         return name.ToCamelCase();
