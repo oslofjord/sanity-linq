@@ -71,7 +71,7 @@ namespace Sanity.Linq
             {
                 _httpQueryClient.BaseAddress = new Uri($"https://{WebUtility.UrlEncode(_options.ProjectId)}.api.sanity.io/{_options.ApiVersion}/");
             }
-            if (!string.IsNullOrEmpty(_options.Token) && !_options.UseCdn)
+            if (!string.IsNullOrEmpty(_options.Token))
             {
                 _httpQueryClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.Token);
             }
@@ -92,7 +92,6 @@ namespace Sanity.Linq
                     _httpQueryClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.Token);
                 }
             }
-
         }
 
         public virtual async Task<SanityQueryResponse<TResult>> FetchAsync<TResult>(string query, object parameters = null, CancellationToken cancellationToken = default)
@@ -106,23 +105,8 @@ namespace Sanity.Linq
                 Query = query,
                 Params = parameters
             };
-            HttpResponseMessage response = null;
-            if (_options.UseCdn)
-            {
-                // CDN only supports GET requests
-                var url = $"data/query/{WebUtility.UrlEncode(_options.Dataset)}?query={WebUtility.UrlEncode(query ?? "")}";
-                if (parameters != null)
-                {
-                    //TODO: Add support for parameters
-                }
-                response = await _httpQueryClient.GetAsync(url, cancellationToken);
-            }
-            else
-            {
-                // Preferred method is POST
-                var json = new StringContent(JsonConvert.SerializeObject(oQuery, Formatting.None, SerializerSettings), Encoding.UTF8, "application/json");
-                response = await _httpQueryClient.PostAsync($"data/query/{WebUtility.UrlEncode(_options.Dataset)}", json, cancellationToken).ConfigureAwait(false);
-            }
+            var json = new StringContent(JsonConvert.SerializeObject(oQuery, Formatting.None, SerializerSettings), Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _httpQueryClient.PostAsync($"data/query/{WebUtility.UrlEncode(_options.Dataset)}", json, cancellationToken).ConfigureAwait(false);
 
             return await HandleHttpResponseAsync<SanityQueryResponse<TResult>>(response).ConfigureAwait(false);
         }
