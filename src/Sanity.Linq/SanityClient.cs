@@ -41,17 +41,26 @@ namespace Sanity.Linq
         private HttpClient _httpClient;
 
         public JsonSerializerSettings SerializerSettings { get; }
+        public JsonSerializerSettings DeserializerSettings { get; }
 
-        public SanityClient(SanityOptions options, JsonSerializerSettings serializerSettings = null, IHttpClientFactory clientFactory = null)
+        public SanityClient(SanityOptions options, JsonSerializerSettings serializerSettings = null, IHttpClientFactory clientFactory = null) : this(options, serializerSettings, serializerSettings, clientFactory)
+        { }
+
+        public SanityClient(SanityOptions options, JsonSerializerSettings serializerSettings, JsonSerializerSettings deserializerSettings, IHttpClientFactory clientFactory = null)
         {
             _options = options;
             _factory = clientFactory;
-            SerializerSettings = serializerSettings ?? new JsonSerializerSettings
+
+            var defaultSerializerSettings = new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver(),
                 NullValueHandling = NullValueHandling.Ignore,
                 Converters = new List<JsonConverter> { new SanityReferenceTypeConverter() }
             };
+
+            SerializerSettings = serializerSettings ?? defaultSerializerSettings;
+            DeserializerSettings = deserializerSettings ?? defaultSerializerSettings;
+
             Initialize();
         }
 
@@ -220,7 +229,7 @@ namespace Sanity.Linq
             {
                 try
                 {
-                    return JsonConvert.DeserializeObject<TResponse>(content, SerializerSettings);
+                    return JsonConvert.DeserializeObject<TResponse>(content, DeserializerSettings);
                 }
                 catch (Exception ex)
                 {
