@@ -1,11 +1,8 @@
-﻿using Newtonsoft.Json.Linq;
-using Sanity.Linq.BlockContent;
+﻿using Sanity.Linq.BlockContent;
 using Sanity.Linq.CommonTypes;
 using Sanity.Linq.Demo.Model;
 using Sanity.Linq.Extensions;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 

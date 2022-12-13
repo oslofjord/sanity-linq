@@ -14,23 +14,18 @@
 //  along with this program.
 
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using Sanity.Linq.BlockContent;
+using Sanity.Linq.CommonTypes;
+using Sanity.Linq.DTOs;
+using Sanity.Linq.Mutations;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Net;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using Sanity.Linq.DTOs;
-using Sanity.Linq.CommonTypes;
-using Sanity.Linq.Mutations;
-using Sanity.Linq.BlockContent;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Sanity.Linq
 {
@@ -51,6 +46,7 @@ namespace Sanity.Linq
         public SanityMutationBuilder Mutations { get; }
 
         public JsonSerializerSettings SerializerSettings { get; }
+        public JsonSerializerSettings DeserializerSettings { get; }
 
         public SanityHtmlBuilder HtmlBuilder { get; set; }
 
@@ -58,35 +54,42 @@ namespace Sanity.Linq
         /// Create a new SanityDbContext using the specified options.
         /// </summary>
         /// <param name="options"></param>
-        /// <param name="isShared">Indicates that the context can be used by multiple SanityDocumentSets</param>
-        public SanityDataContext(SanityOptions options, JsonSerializerSettings serializerSettings = null, SanityHtmlBuilderOptions htmlBuilderOptions = null, IHttpClientFactory clientFactory = null)
+        public SanityDataContext(SanityOptions options, JsonSerializerSettings serializerSettings = null, SanityHtmlBuilderOptions htmlBuilderOptions = null, IHttpClientFactory clientFactory = null) : this (options, serializerSettings, serializerSettings, htmlBuilderOptions, clientFactory) { }
+
+        /// <summary>
+        /// Create a new SanityDbContext using the explicitly specified JsonSerializerSettings.
+        /// </summary>
+        /// <param name="options"></param>
+        public SanityDataContext(SanityOptions options, JsonSerializerSettings serializerSettings, JsonSerializerSettings deserializerSettings, SanityHtmlBuilderOptions htmlBuilderOptions = null, IHttpClientFactory clientFactory = null)
         {
             if (options == null)
             {
                 throw new ArgumentNullException(nameof(options));
             }
-            SerializerSettings = serializerSettings ?? new JsonSerializerSettings
+
+            var defaultSerializerSettings = new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver(),
                 NullValueHandling = NullValueHandling.Ignore,
                 Converters = new List<JsonConverter> { new SanityReferenceTypeConverter() }
             };
-            Client = new SanityClient(options, serializerSettings, clientFactory);
+
+            SerializerSettings = serializerSettings ?? defaultSerializerSettings;
+            DeserializerSettings = deserializerSettings ?? defaultSerializerSettings;
+            Client = new SanityClient(options, serializerSettings, defaultSerializerSettings, clientFactory);
             Mutations = new SanityMutationBuilder(Client);
             HtmlBuilder = new SanityHtmlBuilder(options, null, SerializerSettings, htmlBuilderOptions);
         }
 
-       
         /// <summary>
         /// Create a new SanityDbContext using the specified options.
         /// </summary>
         /// <param name="options"></param>
         /// <param name="isShared">Indicates that the context can be used by multiple SanityDocumentSets</param>
-        internal SanityDataContext(SanityOptions options, bool isShared) : this(options)
+        internal SanityDataContext(SanityOptions options, bool isShared) : this(options, htmlBuilderOptions: null, serializerSettings: null, deserializerSettings: null, clientFactory: null)
         {
             IsShared = isShared;
-        }
-             
+        }             
 
         /// <summary>
         /// Returns an IQueryable document set for specified type
