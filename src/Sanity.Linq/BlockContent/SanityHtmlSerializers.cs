@@ -19,7 +19,7 @@ namespace Sanity.Linq.BlockContent
             var listItemEnd = new StringBuilder();
 
             var text2 = new StringBuilder();
-            
+
 
             // get style
             var tag = "";
@@ -27,7 +27,7 @@ namespace Sanity.Linq.BlockContent
             {
                 tag = "p";
             }
-            else 
+            else
             {
                 //default to span
                 tag = input["style"]?.ToString() ?? "span";
@@ -99,7 +99,7 @@ namespace Sanity.Linq.BlockContent
                     foreach (var mark in child["marks"])
                     {
                         var sMark = mark?.ToString();
-                        var markDef = markDefs?.FirstOrDefault(m => m["_key"]?.ToString() == sMark);                       
+                        var markDef = markDefs?.FirstOrDefault(m => m["_key"]?.ToString() == sMark);
                         if (markDef != null)
                         {
                             if (TrySerializeMarkDef(markDef, context, ref start, ref end))
@@ -144,6 +144,8 @@ namespace Sanity.Linq.BlockContent
         {
             var asset = input["asset"];
             var imageRef = asset?["_ref"]?.ToString();
+            var assetValue = asset?["value"];
+            var imageAltText = assetValue?["altText"];
 
             if (asset == null || imageRef == null)
             {
@@ -168,15 +170,12 @@ namespace Sanity.Linq.BlockContent
                 url.Append(imageParts[2]     + ".");             // dimensions.
                 url.Append(imageParts[3]);                       // file extension
                 url.Append(parameters.ToString());                          // ?crop etc..
-                
-            return Task.FromResult($"<figure><img src=\"{url}\"/></figure>");
+
+            return Task.FromResult($"<figure><img src=\"{url}\" alt=\"{imageAltText}\"/></figure>");
         }
         public Task<string> SerializeTableAsync(JToken input, SanityOptions options)
         {
             var html = "";
-
-
-
             return Task.FromResult(html);
         }
 

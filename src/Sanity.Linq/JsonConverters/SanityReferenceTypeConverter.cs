@@ -66,6 +66,7 @@ namespace Sanity.Linq
 
                 //Get reference from object
                 var valRef = type.GetProperty("Ref").GetValue(value) as string;
+                object Value = null;
 
                 // Alternatively, get reference from Id on nested Value
                 if (string.IsNullOrEmpty(valRef))
@@ -82,6 +83,14 @@ namespace Sanity.Linq
                         }
                     }
                 }
+                else
+                {
+                    var propValue = type.GetProperty("Value");
+                    if (propValue != null)
+                    {
+                        Value = propValue.GetValue(value);
+                    }
+                }
 
                 // Get _key property (required for arrays in sanity editor)
                 var keyProp = type.GetProperties().FirstOrDefault(p => p.Name.ToLower() == "_key" || ((p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName?.Equals("_key")).GetValueOrDefault());
@@ -89,9 +98,10 @@ namespace Sanity.Linq
                 var valKey = keyProp?.GetValue(value) as string ?? Guid.NewGuid().ToString();
                 var valWeak = weakProp?.GetValue(value) as bool? ?? null;
 
+
                 if (!string.IsNullOrEmpty(valRef))
                 {
-                    serializer.Serialize(writer, new { _ref = valRef, _type = "reference", _key = valKey, _weak = valWeak });
+                    serializer.Serialize(writer, new { _ref = valRef, _type = "reference", _key = valKey, _weak = valWeak, value = Value });
                     return;
                 }
             }
