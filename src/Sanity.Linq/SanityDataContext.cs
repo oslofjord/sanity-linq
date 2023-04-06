@@ -76,7 +76,7 @@ namespace Sanity.Linq
 
             SerializerSettings = serializerSettings ?? defaultSerializerSettings;
             DeserializerSettings = deserializerSettings ?? defaultSerializerSettings;
-            Client = new SanityClient(options, serializerSettings, defaultSerializerSettings, clientFactory);
+            Client = new SanityClient(options, SerializerSettings, DeserializerSettings, clientFactory);
             Mutations = new SanityMutationBuilder(Client);
             HtmlBuilder = new SanityHtmlBuilder(options, null, SerializerSettings, htmlBuilderOptions);
         }
