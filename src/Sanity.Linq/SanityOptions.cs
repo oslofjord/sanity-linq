@@ -14,6 +14,8 @@
 //  along with this program.
 
 
+using System;
+
 namespace Sanity.Linq
 {
     public class SanityOptions
@@ -26,6 +28,22 @@ namespace Sanity.Linq
 
         public bool UseCdn { get; set; }
 
-        public string ApiVersion { get; set; } = "v1";
+        private string _apiVersion = "v1";
+        
+        /// <summary>
+        /// The Sanity API version to use. Defaults to v1. Prefixes with "v" if not present as prefix.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">If you try to set ApiVersion = null</exception>
+        public string ApiVersion
+        {
+            get => _apiVersion;
+            set
+            {
+                if (value == null)
+                    throw new ArgumentNullException("ApiVersion cannot be set to null");
+                
+                _apiVersion = value.StartsWith("v") ? value : $"v{value}";
+            }
+        }
     }
 }
