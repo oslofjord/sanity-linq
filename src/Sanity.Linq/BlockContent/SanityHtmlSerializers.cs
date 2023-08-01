@@ -145,7 +145,7 @@ namespace Sanity.Linq.BlockContent
             var asset = input["asset"];
             var imageRef = asset?["_ref"]?.ToString();
             var assetValue = asset?["value"];
-            var imageAltText = assetValue?["altText"];
+            var imageAltText = assetValue?["altText"] ?? "";
 
             if (asset == null || imageRef == null)
             {
