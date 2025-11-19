@@ -62,8 +62,8 @@ namespace Sanity.Linq.Tests
             var result1 = await categories.Where(c => namesToFind.Contains(c.Title)).ToListAsync();
             Assert.True(result1.Count == 2);
 
-            var ïdsToFind = new List<int> { 1, 2 };
-            var result2 = await categories.Where(c => ïdsToFind.Contains(c.InternalId)).ToListAsync();
+            var idsToFind = new List<int> { 1, 2 };
+            var result2 = await categories.Where(c => idsToFind.Contains(c.InternalId)).ToListAsync();
             Assert.True(result2.Count == 2);
 
 
@@ -71,7 +71,7 @@ namespace Sanity.Linq.Tests
             // *["Two" in tags]
             // .Where(p => p.Ids.Contains(ids))
             var result3 = await categories.Where(c => c.Tags.Contains("Two")).ToListAsync();
-            Assert.True( result3.Count == 1);
+            Assert.True(result3.Count == 1);
 
             var result4 = await categories.Where(c => c.Numbers.Contains(3)).ToListAsync();
             Assert.True(result4.Count == 1);
@@ -114,7 +114,7 @@ namespace Sanity.Linq.Tests
             // Chained mutations
             categories.Create(category1).Create(category2).Create(category3);
 
-            
+
             // Create new author
             var author = new Author
             {
@@ -198,7 +198,7 @@ namespace Sanity.Linq.Tests
                 .Include(p => p.Author)
                 .Include(p => p.DereferencedAuthor, "author")
                 .Include(p => p.Author.Value.Images)
-                .Include(p => p.Categories)
+                .Include(p => p.Categories.Where(c => c.Value.CategoryId == category1.CategoryId || c.Value.CategoryId == category2.CategoryId))
                 .Include(p => p.Author.Value.FavoriteCategories)
                 .Where(p => p.PublishedAt >= DateTime.Today);
 
@@ -211,6 +211,7 @@ namespace Sanity.Linq.Tests
             Assert.True(results.Count > 0);
             Assert.NotNull(results[0].Author?.Value);
             Assert.NotNull(results[0].DereferencedAuthor);
+            Assert.True(results[0].Categories.Count == 2);
             Assert.Equal("Joe Bloggs", results[0].Author.Value.Name);
 
             // Update test
