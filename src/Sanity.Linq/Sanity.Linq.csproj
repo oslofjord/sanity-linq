@@ -1,4 +1,5 @@
-﻿<!--
+﻿
+<!--
 Copywrite 2018 Oslofjord Operations AS
 
 This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
@@ -21,7 +22,7 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Oslofjord Operations AS</Authors>
     <Company>Oslofjord Operations AS</Company>
