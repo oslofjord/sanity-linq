@@ -40,7 +40,7 @@ jobs:
         run: dotnet pack src/Sanity.Linq/Sanity.Linq.csproj -c Release --no-build -p:GeneratePackageOnBuild=false -o ./artifacts
 
       - name: Upload package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nupkg
           path: ./artifacts/*.nupkg
