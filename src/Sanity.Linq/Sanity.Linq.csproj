@@ -76,7 +76,7 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
 
   <ItemGroup>
 	<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-	<PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+	<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
