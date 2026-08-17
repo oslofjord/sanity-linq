@@ -1,0 +1,60 @@
+﻿<!--
+Copywrite 2018 Oslofjord Operations AS
+
+This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
+
+ Sanity LINQ is free software: you can redistribute it and/or modify
+ it under the terms of the MIT Licence.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+ MIT Licence for more details.
+
+ You should have received a copy of the MIT Licence
+ along with this program.
+
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Oslofjord Operations AS</Authors>
+    <Company>Oslofjord Operations AS</Company>
+    <Product>Sanity LINQ</Product>
+    <Version>2.0.0</Version>
+    <Description>Newtonsoft.Json compatibility for Sanity LINQ 2.x. Lets applications written against Sanity LINQ 1.x keep using Newtonsoft.Json attributes, JsonSerializerSettings and JToken-based block content serializers after the core library moved to System.Text.Json.</Description>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Copyright>2018 Oslofjord Operations AS</Copyright>
+    <PackageProjectUrl>https://github.com/oslofjord/sanity-linq</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/oslofjord/sanity-linq</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>sanity cms dotnet linq client groq newtonsoft json migration</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <PackageId>Sanity.Linq.Newtonsoft</PackageId>
+    <AssemblyName>Sanity.Linq.Newtonsoft</AssemblyName>
+    <RootNamespace>Sanity.Linq.Newtonsoft</RootNamespace>
+    <PackageReleaseNotes>2.0.0 - Initial release. Migration support for applications moving from Sanity LINQ 1.x (Newtonsoft.Json) to 2.x (System.Text.Json). See MIGRATION.md for the supported surface and its limits.</PackageReleaseNotes>
+
+	<PublishRepositoryUrl>true</PublishRepositoryUrl>
+	<EmbedUntrackedSources>true</EmbedUntrackedSources>
+	<DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+	</PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sanity.Linq\Sanity.Linq.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -26,7 +26,7 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
     <Authors>Oslofjord Operations AS</Authors>
     <Company>Oslofjord Operations AS</Company>
     <Product>Sanity LINQ</Product>
-    <Version>1.8.0</Version>
+    <Version>2.0.0</Version>
     <Description>Strongly-typed .Net Client for Sanity CMS (https://sanity.io)</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Copyright>2018 Oslofjord Operations AS</Copyright>
@@ -34,12 +34,12 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
     <RepositoryUrl>https://github.com/oslofjord/sanity-linq</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>sanity cms dotnet linq client groq</PackageTags>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/oslofjord/sanity-linq/master/LICENSE</PackageLicenseUrl>
-    <AssemblyVersion>1.8.0.0</AssemblyVersion>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
     <PackageId>Sanity.Linq</PackageId>
     <AssemblyName>Sanity.Linq</AssemblyName>
     <RootNamespace>Sanity.Linq</RootNamespace>
-    <FileVersion>1.8.0.0</FileVersion>
+    <FileVersion>2.0.0.0</FileVersion>
     <PackageReleaseNotes>1.0 - Sanity Linq library
 1.1 - BlockContent library
 1.1.1 - Improvements BlockContent
@@ -64,6 +64,16 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
 1.7.0 - Allow for overriding JsonSerializerSettings for serialization and deserialization
 1.7.1 - Fixed using correct serializer settings in client
 1.8.0 - Maintenance release: updated Microsoft.Extensions.Http to a supported version (CVE remediation); fixed malformed line breaks in ToHtml/SanityHtmlBuilder output (now emits &lt;br /&gt;) (#75); introduced Sanity-specific exception types (SanityException base with SanitySerializationException, SanityQueryException, SanityBlockContentException; SanityHttpException now derives from SanityException) and switched argument/state guards to standard BCL exceptions (#72). Behavioral change: the concrete exception types thrown on some paths have changed - catch (SanityException) to handle any Sanity-domain failure.
+2.0.0 - BREAKING: replaced Newtonsoft.Json with System.Text.Json (#71). Newtonsoft.Json is no longer a dependency.
+  * JsonSerializerSettings is now JsonSerializerOptions throughout. SanityClient.SerializerSettings/DeserializerSettings and SanityDataContext.SerializerSettings/DeserializerSettings are now SerializerOptions/DeserializerOptions; SanityMutationBuilder.Build and the SanityClient/SanityDataContext/SanityHtmlBuilder constructors take JsonSerializerOptions.
+  * Block content serializers receive System.Text.Json.Nodes.JsonNode instead of JToken. SanityHtmlBuilder.Serializers, AddSerializer, AddHtmlSerializer, SanityHtmlSerializers and SanityTreeBuilder.Build are all affected.
+  * Model classes should use [JsonPropertyName] / [JsonIgnore] from System.Text.Json. Newtonsoft's [JsonProperty] / [JsonIgnore] are still honoured for GROQ query generation, so existing queries keep working; reproducing them during serialization additionally requires the Sanity.Linq.Newtonsoft package.
+  * Install Sanity.Linq.Newtonsoft to keep 1.x serializer settings, custom Newtonsoft converters, Newtonsoft model attributes and JToken block serializers working during migration. See MIGRATION.md.
+  * Fixed: deserializing a dereferenced reference that carries _key or _weak threw an ArgumentException. Sanity emits _key for objects inside arrays, so this affected real documents.
+  * Fixed: a schemaless (JObject-typed) field emitted a second, malformed projection alongside "{...}". Free-form fields now project as "{...}" only, and JsonObject/JsonNode/JsonElement are recognised as free-form.
+  * Fixed: chained query operators repeated the ordering clause. The expression tree was traversed twice at every level, visiting the innermost call 2^depth times, so .OrderBy(t).Skip(5).Take(10) emitted "order(t asc, t asc, t asc, t asc)" and .OrderBy(a).ThenBy(b) emitted "order(a asc, b asc, a asc)". Results were already ordered correctly, so this changes the query text rather than what Sanity returns; update any assertions on generated GROQ.
+  * Behavioural change: an explicit attribute name is no longer camel-cased. 1.x applied its naming strategy on top of [JsonProperty("MyField")], yielding "myField"; [JsonPropertyName("MyField")] now serializes as "MyField". Names already lowercase or prefixed with _ (all Sanity system fields) are unaffected.
+  * GROQ output, mutation payloads and ToHtml output are otherwise unchanged, covered by an offline golden test suite.
     </PackageReleaseNotes>
 
 	<PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -77,7 +87,7 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
 
   <ItemGroup>
 	<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
 </Project>

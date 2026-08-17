@@ -13,7 +13,7 @@
 //  You should have received a copy of the MIT Licence
 //  along with this program.
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using Sanity.Linq.Extensions;
 using System;
 using System.Collections.Generic;
@@ -29,10 +29,10 @@ namespace Sanity.Linq.CommonTypes
             SanityKey = Guid.NewGuid().ToString();
         }
 
-        [JsonProperty("_type")]
+        [JsonPropertyName("_type")]
         public string SanityType { get; set; }
 
-        [JsonProperty("_key")]
+        [JsonPropertyName("_key")]
         public string SanityKey { get; set; }
     }
 }

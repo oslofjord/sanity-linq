@@ -13,7 +13,7 @@
 //  You should have received a copy of the MIT Licence
 //  along with this program.
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System;
 
 namespace Sanity.Linq.Mutations

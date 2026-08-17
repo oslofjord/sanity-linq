@@ -13,17 +13,29 @@
 //  You should have received a copy of the MIT Licence
 //  along with this program.
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace Sanity.Linq.CommonTypes
 {
     public class SanityLocale<T> : Dictionary<string, object>
     {
+        /// <summary>
+        /// Options used to convert raw translation values into T.
+        ///
+        /// Translation values are stored as loose JSON, so converting one to T is a second,
+        /// separate deserialization step that does not see the options the containing
+        /// document was read with. 1.x had the same limitation (it went through
+        /// Newtonsoft's global defaults); using the library defaults here keeps that
+        /// behaviour, including case-insensitive property matching.
+        /// </summary>
+        private static readonly JsonSerializerOptions ConversionOptions = Json.SanityJsonOptions.CreateDefault();
+
         public SanityLocale()
         {
         }
@@ -41,39 +53,77 @@ namespace Sanity.Linq.CommonTypes
         }
         
 
-        public IReadOnlyDictionary<string, T> Translations => this.Where(kv => kv.Key != "_type").ToDictionary(kv => kv.Key, kv => {
-            if (kv.Value == null) return default(T);
-            if (kv.Value is T) return (T)kv.Value;
-            if (kv.Value is JObject) return ((JObject)kv.Value).ToObject<T>();
-            return default(T);
-        });
+        public IReadOnlyDictionary<string, T> Translations =>
+            this.Where(kv => kv.Key != "_type").ToDictionary(kv => kv.Key, kv => Convert(kv.Value));
 
         public T Get(string languageCode)
         {
-            if (this.ContainsKey(languageCode))
+            return ContainsKey(languageCode) ? Convert(this[languageCode]) : default(T);
+        }
+
+        /// <summary>
+        /// Converts a raw dictionary value to T.
+        ///
+        /// Values set in code are already of type T. Values that came from a Sanity response
+        /// arrive as whatever the deserializer produced for "object": JsonElement, or a
+        /// JsonNode when the value was assembled through the DOM.
+        /// </summary>
+        private static T Convert(object value)
+        {
+            switch (value)
             {
-                if (this[languageCode] is JObject)
-                {
-                    return ((JObject)this[languageCode]).ToObject<T>();
-                }
-                else if (this[languageCode] is JArray)
-                {
-                    return ((JArray)this[languageCode]).ToObject<T>();
-                }
-                else
-                {
-                    var sVal = this[languageCode]?.ToString();
-                    if (sVal != null && typeof(T) == typeof(string))
-                    {
-                        return (T)(object)sVal;
-                    }
-                    return sVal != null ? (T)Convert.ChangeType(sVal, typeof(T)) : default(T);
-                }
+                case null:
+                    return default(T);
+
+                case T typed:
+                    return typed;
+
+                case JsonElement element:
+                    return FromJsonElement(element);
+
+                case JsonNode node:
+                    return node.Deserialize<T>(ConversionOptions);
+
+                default:
+                    return FromScalar(value.ToString());
             }
-            else
+        }
+
+        private static T FromJsonElement(JsonElement element)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.Null:
+                case JsonValueKind.Undefined:
+                    return default(T);
+
+                case JsonValueKind.Object:
+                case JsonValueKind.Array:
+                    return element.Deserialize<T>(ConversionOptions);
+
+                case JsonValueKind.String:
+                    return FromScalar(element.GetString());
+
+                default:
+                    // Numbers and booleans: fall back to their JSON text so the same
+                    // conversion rules apply as for strings.
+                    return FromScalar(element.GetRawText());
+            }
+        }
+
+        private static T FromScalar(string value)
+        {
+            if (value == null)
             {
                 return default(T);
             }
+
+            if (typeof(T) == typeof(string))
+            {
+                return (T)(object)value;
+            }
+
+            return (T)System.Convert.ChangeType(value, typeof(T));
         }
 
         public void Set(string languageCode, T value)

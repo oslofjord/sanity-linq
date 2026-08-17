@@ -14,16 +14,16 @@
 //  along with this program.
 
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Sanity.Linq.BlockContent;
 using Sanity.Linq.CommonTypes;
 using Sanity.Linq.DTOs;
+using Sanity.Linq.Json;
 using Sanity.Linq.Mutations;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,8 +45,8 @@ namespace Sanity.Linq
 
         public SanityMutationBuilder Mutations { get; }
 
-        public JsonSerializerSettings SerializerSettings { get; }
-        public JsonSerializerSettings DeserializerSettings { get; }
+        public JsonSerializerOptions SerializerOptions { get; }
+        public JsonSerializerOptions DeserializerOptions { get; }
 
         public SanityHtmlBuilder HtmlBuilder { get; set; }
 
@@ -54,31 +54,26 @@ namespace Sanity.Linq
         /// Create a new SanityDbContext using the specified options.
         /// </summary>
         /// <param name="options"></param>
-        public SanityDataContext(SanityOptions options, JsonSerializerSettings serializerSettings = null, SanityHtmlBuilderOptions htmlBuilderOptions = null, IHttpClientFactory clientFactory = null) : this (options, serializerSettings, serializerSettings, htmlBuilderOptions, clientFactory) { }
+        public SanityDataContext(SanityOptions options, JsonSerializerOptions serializerOptions = null, SanityHtmlBuilderOptions htmlBuilderOptions = null, IHttpClientFactory clientFactory = null) : this (options, serializerOptions, serializerOptions, htmlBuilderOptions, clientFactory) { }
 
         /// <summary>
-        /// Create a new SanityDbContext using the explicitly specified JsonSerializerSettings.
+        /// Create a new SanityDbContext using the explicitly specified JsonSerializerOptions.
         /// </summary>
         /// <param name="options"></param>
-        public SanityDataContext(SanityOptions options, JsonSerializerSettings serializerSettings, JsonSerializerSettings deserializerSettings, SanityHtmlBuilderOptions htmlBuilderOptions = null, IHttpClientFactory clientFactory = null)
+        public SanityDataContext(SanityOptions options, JsonSerializerOptions serializerOptions, JsonSerializerOptions deserializerOptions, SanityHtmlBuilderOptions htmlBuilderOptions = null, IHttpClientFactory clientFactory = null)
         {
             if (options == null)
             {
                 throw new ArgumentNullException(nameof(options));
             }
 
-            var defaultSerializerSettings = new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                NullValueHandling = NullValueHandling.Ignore,
-                Converters = new List<JsonConverter> { new SanityReferenceTypeConverter() }
-            };
+            var defaultOptions = SanityJsonOptions.CreateDefault();
 
-            SerializerSettings = serializerSettings ?? defaultSerializerSettings;
-            DeserializerSettings = deserializerSettings ?? defaultSerializerSettings;
-            Client = new SanityClient(options, SerializerSettings, DeserializerSettings, clientFactory);
+            SerializerOptions = serializerOptions ?? defaultOptions;
+            DeserializerOptions = deserializerOptions ?? defaultOptions;
+            Client = new SanityClient(options, SerializerOptions, DeserializerOptions, clientFactory);
             Mutations = new SanityMutationBuilder(Client);
-            HtmlBuilder = new SanityHtmlBuilder(options, null, SerializerSettings, htmlBuilderOptions);
+            HtmlBuilder = new SanityHtmlBuilder(options, null, SerializerOptions, htmlBuilderOptions);
         }
 
         /// <summary>
@@ -86,10 +81,10 @@ namespace Sanity.Linq
         /// </summary>
         /// <param name="options"></param>
         /// <param name="isShared">Indicates that the context can be used by multiple SanityDocumentSets</param>
-        internal SanityDataContext(SanityOptions options, bool isShared) : this(options, htmlBuilderOptions: null, serializerSettings: null, deserializerSettings: null, clientFactory: null)
+        internal SanityDataContext(SanityOptions options, bool isShared) : this(options, htmlBuilderOptions: null, serializerOptions: null, deserializerOptions: null, clientFactory: null)
         {
             IsShared = isShared;
-        }             
+        }
 
         /// <summary>
         /// Returns an IQueryable document set for specified type
@@ -129,7 +124,7 @@ namespace Sanity.Linq
         /// <returns></returns>
         public async Task<SanityMutationResponse> CommitAsync(bool returnIds = false, bool returnDocuments = false, SanityMutationVisibility visibility = SanityMutationVisibility.Sync, CancellationToken cancellationToken = default)
         {
-            var result = await Client.CommitMutationsAsync(Mutations.Build(Client.SerializerSettings), returnIds, returnDocuments, visibility, cancellationToken).ConfigureAwait(false);
+            var result = await Client.CommitMutationsAsync(Mutations.Build(Client.SerializerOptions), returnIds, returnDocuments, visibility, cancellationToken).ConfigureAwait(false);
             Mutations.Clear();
             return result;
         }

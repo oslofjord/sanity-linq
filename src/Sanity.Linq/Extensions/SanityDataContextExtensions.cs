@@ -13,7 +13,6 @@
 //  You should have received a copy of the MIT Licence
 //  along with this program.
 
-using Newtonsoft.Json.Linq;
 using Sanity.Linq.CommonTypes;
 using Sanity.Linq.DTOs;
 using Sanity.Linq.Internal;
@@ -23,18 +22,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Sanity.Linq
 {
     public static class SanityDataContextExtensions
     {
-        public static void AddHtmlSerializer(this SanityDataContext sanity, string type, Func<JToken, SanityOptions, Task<string>> serializer)
+        public static void AddHtmlSerializer(this SanityDataContext sanity, string type, Func<JsonNode, SanityOptions, Task<string>> serializer)
         {
             sanity.HtmlBuilder.AddSerializer(type, serializer);
         }
 
-        public static void AddHtmlSerializer(this SanityDataContext sanity, string type, Func<JToken, SanityOptions,object,Task<string>> serializer)
+        public static void AddHtmlSerializer(this SanityDataContext sanity, string type, Func<JsonNode, SanityOptions, object, Task<string>> serializer)
         {
             sanity.HtmlBuilder.AddSerializer(type, serializer);
         }

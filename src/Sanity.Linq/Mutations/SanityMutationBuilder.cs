@@ -13,14 +13,14 @@
 //  You should have received a copy of the MIT Licence
 //  along with this program.
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Sanity.Linq.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Sanity.Linq.Mutations
 {
@@ -40,7 +40,7 @@ namespace Sanity.Linq.Mutations
             InnerBuilder = innerBuilder;
         }
 
-        [JsonIgnore()]
+        [JsonIgnore]
         public SanityMutationBuilder InnerBuilder { get; }
 
         public object GetLock() => InnerBuilder.GetLock();
@@ -55,7 +55,7 @@ namespace Sanity.Linq.Mutations
 
         public virtual string Build()
         {
-            return InnerBuilder.Build(Mutations, InnerBuilder.Client.SerializerSettings );
+            return InnerBuilder.Build(Mutations, InnerBuilder.Client.SerializerOptions);
         }
 
         public IReadOnlyList<SanityMutation> Mutations
@@ -299,14 +299,19 @@ namespace Sanity.Linq.Mutations
             }
         }
 
-        public virtual string Build(JsonSerializerSettings serializerSettings)
+        public virtual string Build(JsonSerializerOptions serializerOptions)
         {
-            return Build(Mutations, serializerSettings);
+            return Build(Mutations, serializerOptions);
         }
 
-        public virtual string Build(IEnumerable<SanityMutation> mutations, JsonSerializerSettings serializerSettings)
+        public virtual string Build(IEnumerable<SanityMutation> mutations, JsonSerializerOptions serializerOptions)
         {
-            return JsonConvert.SerializeObject(new { Mutations = mutations }, Formatting.None, serializerSettings);
+            // Each mutation is cast to object so that System.Text.Json serializes it by its
+            // run-time type. Serializing a collection declared as IEnumerable<SanityMutation>
+            // would use the abstract base type's contract and emit empty objects, whereas an
+            // object-declared value is serialized polymorphically.
+            var payload = new { Mutations = mutations.Select(m => (object)m).ToArray() };
+            return JsonSerializer.Serialize(payload, serializerOptions);
         }
 
         public SanityMutationBuilder CreateOrReplace(object document)
@@ -367,8 +372,8 @@ namespace Sanity.Linq.Mutations
         {
             lock (GetLock())
             {
-                var sPatch = JsonConvert.SerializeObject(patch);
-                var oPatch = JsonConvert.DeserializeObject<SanityPatchByQuery>(sPatch);
+                var sPatch = JsonSerializer.Serialize(patch, Client.SerializerOptions);
+                var oPatch = JsonSerializer.Deserialize<SanityPatchByQuery>(sPatch, Client.DeserializerOptions);
                 var parser = new SanityExpressionParser(query, typeof(object), MutationQuerySettings.MAX_NESTING_LEVEL);
                 var sQuery = parser.BuildQuery(false);
                 oPatch.Query = sQuery;
@@ -404,8 +409,8 @@ namespace Sanity.Linq.Mutations
         {
             lock (GetLock())
             {
-                var sPatch = JsonConvert.SerializeObject(patch);
-                var oPatch = JsonConvert.DeserializeObject<SanityPatchById>(sPatch);
+                var sPatch = JsonSerializer.Serialize(patch, Client.SerializerOptions);
+                var oPatch = JsonSerializer.Deserialize<SanityPatchById>(sPatch, Client.DeserializerOptions);
                 oPatch.Id = id;
                 Mutations.Add(new SanityPatchMutation(oPatch));
                 return this;

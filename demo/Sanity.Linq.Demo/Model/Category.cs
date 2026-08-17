@@ -1,24 +1,24 @@
-﻿using Newtonsoft.Json;
-using Sanity.Linq.CommonTypes;
+﻿using Sanity.Linq.CommonTypes;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace Sanity.Linq.Demo.Model
 {
     public class Category
     {
         /// <summary>
-        /// Use of JsonProperty to serialize to Sanity _id field.
+        /// Use of JsonPropertyName to serialize to Sanity _id field.
         /// A alternative to inheriting SanityDocument class
         /// </summary>
-        [JsonProperty("_id")]
+        [JsonPropertyName("_id")]
         public string CategoryId { get; set; }
 
         /// <summary>
         /// Type field is also required
         /// </summary>
-        [JsonProperty("_type")]
+        [JsonPropertyName("_type")]
         public string DocumentType => "category";
 
         public int InternalId { get; set; }

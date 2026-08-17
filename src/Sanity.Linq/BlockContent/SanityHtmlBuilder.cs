@@ -1,10 +1,10 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
+using Sanity.Linq.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Sanity.Linq.BlockContent
@@ -13,24 +13,19 @@ namespace Sanity.Linq.BlockContent
     {
         SanityOptions _options;
         SanityHtmlBuilderOptions _htmlBuilderOptions;
-        public Dictionary<string, Func<JToken, SanityOptions, object, Task<string>>> Serializers { get; } = new Dictionary<string, Func<JToken, SanityOptions, object, Task<string>>>();
+        public Dictionary<string, Func<JsonNode, SanityOptions, object, Task<string>>> Serializers { get; } = new Dictionary<string, Func<JsonNode, SanityOptions, object, Task<string>>>();
         SanityTreeBuilder treeBuilder = new SanityTreeBuilder();
 
-        public JsonSerializerSettings SerializerSettings { get; }
+        public JsonSerializerOptions SerializerOptions { get; }
 
 
         public SanityHtmlBuilder(SanityOptions options,
-            Dictionary<string,Func<JToken,SanityOptions,object,Task<string>>> customSerializers = null,
-            JsonSerializerSettings serializerSettings = null,
+            Dictionary<string, Func<JsonNode, SanityOptions, object, Task<string>>> customSerializers = null,
+            JsonSerializerOptions serializerOptions = null,
             SanityHtmlBuilderOptions htmlBuilderOptions = null)
         {
             _options = options;
-            SerializerSettings = serializerSettings ?? new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                NullValueHandling = NullValueHandling.Ignore,
-                Converters = new List<JsonConverter> { new SanityReferenceTypeConverter() }
-            };
+            SerializerOptions = serializerOptions ?? SanityJsonOptions.CreateDefault();
             if (customSerializers != null)
             {
                 InitSerializers(customSerializers);
@@ -46,16 +41,16 @@ namespace Sanity.Linq.BlockContent
             {
                 _htmlBuilderOptions = new SanityHtmlBuilderOptions();
             }
-            
+
         }
 
-        public virtual void AddSerializer(string type, Func<JToken, SanityOptions, Task<string>> serializeFn)
+        public virtual void AddSerializer(string type, Func<JsonNode, SanityOptions, Task<string>> serializeFn)
         {
-            Func<JToken, SanityOptions, object, Task<string>> _serlializerFn = (token, options, context) => serializeFn(token, options);
+            Func<JsonNode, SanityOptions, object, Task<string>> _serlializerFn = (token, options, context) => serializeFn(token, options);
             Serializers[type] = _serlializerFn;
         }
 
-        public virtual void AddSerializer(string type, Func<JToken, SanityOptions, object, Task<string>> serializeFn)
+        public virtual void AddSerializer(string type, Func<JsonNode, SanityOptions, object, Task<string>> serializeFn)
         {
             Serializers[type] = serializeFn;
         }
@@ -67,13 +62,13 @@ namespace Sanity.Linq.BlockContent
                 throw new ArgumentNullException(nameof(content));
             }
 
-            if (content is JArray)
+            if (content is JsonArray)
             {
-                return BuildAsync((JArray)content, buildContext);
+                return BuildAsync((JsonArray)content, buildContext);
             }
-            else if (content is JToken)
+            else if (content is JsonNode)
             {
-                return SerializeBlockAsync((JToken)content, buildContext);
+                return SerializeBlockAsync((JsonNode)content, buildContext);
             }
             else if (content is string) // JSON String
             {
@@ -81,12 +76,12 @@ namespace Sanity.Linq.BlockContent
             }
             else // Strongly typed object
             {
-                var json = JsonConvert.SerializeObject(content, SerializerSettings);
+                var json = JsonSerializer.Serialize(content, SerializerOptions);
                 return Build(json, buildContext);
             }
         }
 
-        protected async virtual Task<string> BuildAsync(JArray content, object buildContext)
+        protected async virtual Task<string> BuildAsync(JsonArray content, object buildContext)
         {
             if (content == null)
             {
@@ -106,26 +101,35 @@ namespace Sanity.Linq.BlockContent
 
             return html.ToString();
         }
-        
+
 
         protected virtual Task<string> Build(string content, object buildContext)
         {
-            var nodes = JsonConvert.DeserializeObject(content, SerializerSettings) as JToken;
-            if (nodes is JArray)
+            JsonNode nodes;
+            try
+            {
+                nodes = JsonNode.Parse(content);
+            }
+            catch (JsonException ex)
+            {
+                throw new SanitySerializationException("Could not convert block content to HTML; content was not valid JSON.", ex);
+            }
+
+            if (nodes is JsonArray)
             {
                 // Block array (ie. block content)
-                return BuildAsync((JArray)nodes, buildContext);
+                return BuildAsync((JsonArray)nodes, buildContext);
             }
             else
-            { 
+            {
                 // Single block
                 return SerializeBlockAsync(nodes, buildContext);
             }
         }
 
-        private Task<string> SerializeBlockAsync(JToken block, object buildContext)
+        private Task<string> SerializeBlockAsync(JsonNode block, object buildContext)
         {
-            var type = block["_type"]?.ToString();
+            var type = SanityJsonNode.GetString(block, "_type");
             if (string.IsNullOrEmpty(type))
             {
                 throw new SanityBlockContentException("Could not convert block to HTML; _type was not defined on block content.");
@@ -133,8 +137,8 @@ namespace Sanity.Linq.BlockContent
             if (!Serializers.ContainsKey(type))
             {
                 // TODO: Add options for ignoring/skipping specific types.
-                return _htmlBuilderOptions.IgnoreAllUnknownTypes 
-                       ? Task.FromResult("") 
+                return _htmlBuilderOptions.IgnoreAllUnknownTypes
+                       ? Task.FromResult("")
                        : throw new SanityBlockContentException($"No serializer for type '{type}' could be found. Consider providing a custom serializer or setting HtmlBuilderOptions.IgnoreAllUnknownTypes.");
             }
             return Serializers[type](block, _options, buildContext);
@@ -145,7 +149,7 @@ namespace Sanity.Linq.BlockContent
             LoadDefaultSerializers();
         }
 
-        private void InitSerializers(Dictionary<string, Func<JToken, SanityOptions, object, Task<string>>> customSerializers) //with default and custom serializers
+        private void InitSerializers(Dictionary<string, Func<JsonNode, SanityOptions, object, Task<string>>> customSerializers) //with default and custom serializers
         {
             LoadDefaultSerializers();
             foreach (var customSerializer in customSerializers)

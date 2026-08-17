@@ -23,7 +23,6 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Sanity.Linq.Extensions;
 using Sanity.Linq.Internal;
 
