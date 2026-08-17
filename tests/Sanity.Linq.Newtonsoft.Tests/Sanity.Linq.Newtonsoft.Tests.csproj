@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+
+    <RootNamespace>Sanity.Linq.Newtonsoft.Tests</RootNamespace>
+
+    <AssemblyName>Sanity.Linq.Newtonsoft.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Sanity.Linq\Sanity.Linq.csproj" />
+    <ProjectReference Include="..\..\src\Sanity.Linq.Newtonsoft\Sanity.Linq.Newtonsoft.csproj" />
+  </ItemGroup>
+
+</Project>

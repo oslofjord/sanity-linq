@@ -14,11 +14,10 @@
 //  along with this program.
 
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Sanity.Linq.CommonTypes;
 using Sanity.Linq.DTOs;
 using Sanity.Linq.Internal;
+using Sanity.Linq.Json;
 using Sanity.Linq.Mutations;
 using System;
 using System.Collections.Generic;
@@ -28,6 +27,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,26 +40,21 @@ namespace Sanity.Linq
         private HttpClient _httpQueryClient;
         private HttpClient _httpClient;
 
-        public JsonSerializerSettings SerializerSettings { get; }
-        public JsonSerializerSettings DeserializerSettings { get; }
+        public JsonSerializerOptions SerializerOptions { get; }
+        public JsonSerializerOptions DeserializerOptions { get; }
 
-        public SanityClient(SanityOptions options, JsonSerializerSettings serializerSettings = null, IHttpClientFactory clientFactory = null) : this(options, serializerSettings, serializerSettings, clientFactory)
+        public SanityClient(SanityOptions options, JsonSerializerOptions serializerOptions = null, IHttpClientFactory clientFactory = null) : this(options, serializerOptions, serializerOptions, clientFactory)
         { }
 
-        public SanityClient(SanityOptions options, JsonSerializerSettings serializerSettings, JsonSerializerSettings deserializerSettings, IHttpClientFactory clientFactory = null)
+        public SanityClient(SanityOptions options, JsonSerializerOptions serializerOptions, JsonSerializerOptions deserializerOptions, IHttpClientFactory clientFactory = null)
         {
             _options = options;
             _factory = clientFactory;
 
-            var defaultSerializerSettings = new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                NullValueHandling = NullValueHandling.Ignore,
-                Converters = new List<JsonConverter> { new SanityReferenceTypeConverter() }
-            };
+            var defaultOptions = SanityJsonOptions.CreateDefault();
 
-            SerializerSettings = serializerSettings ?? defaultSerializerSettings;
-            DeserializerSettings = deserializerSettings ?? defaultSerializerSettings;
+            SerializerOptions = serializerOptions ?? defaultOptions;
+            DeserializerOptions = deserializerOptions ?? defaultOptions;
 
             Initialize();
         }
@@ -114,7 +109,7 @@ namespace Sanity.Linq
                 Query = query,
                 Params = parameters
             };
-            var json = new StringContent(JsonConvert.SerializeObject(oQuery, Formatting.None, SerializerSettings), Encoding.UTF8, "application/json");
+            var json = new StringContent(JsonSerializer.Serialize(oQuery, SerializerOptions), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpQueryClient.PostAsync($"data/query/{WebUtility.UrlEncode(_options.Dataset)}", json, cancellationToken).ConfigureAwait(false);
 
             return await HandleHttpResponseAsync<SanityQueryResponse<TResult>>(response).ConfigureAwait(false);
@@ -214,9 +209,9 @@ namespace Sanity.Linq
                 throw new ArgumentNullException(nameof(mutations));
             }
 
-            var json = mutations is string ? mutations as string : 
-                       mutations is SanityMutationBuilder ? ((SanityMutationBuilder)mutations).Build(SerializerSettings) : 
-                       JsonConvert.SerializeObject(mutations, Formatting.None, SerializerSettings);
+            var json = mutations is string ? mutations as string :
+                       mutations is SanityMutationBuilder ? ((SanityMutationBuilder)mutations).Build(SerializerOptions) :
+                       JsonSerializer.Serialize(mutations, SerializerOptions);
 
             var response = await _httpClient.PostAsync($"data/mutate/{WebUtility.UrlEncode(_options.Dataset)}?returnIds={returnIds.ToString().ToLower()}&returnDocuments={returnDocuments.ToString().ToLower()}&visibility={visibility.ToString().ToLower()}", new StringContent(json, Encoding.UTF8, "application/json"), cancellationToken).ConfigureAwait(false);
             return await HandleHttpResponseAsync<TResult>(response).ConfigureAwait(false);
@@ -229,7 +224,7 @@ namespace Sanity.Linq
             {
                 try
                 {
-                    return JsonConvert.DeserializeObject<TResponse>(content, DeserializerSettings);
+                    return JsonSerializer.Deserialize<TResponse>(content, DeserializerOptions);
                 }
                 catch (Exception ex)
                 {

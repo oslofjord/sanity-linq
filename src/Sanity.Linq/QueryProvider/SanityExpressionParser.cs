@@ -14,11 +14,10 @@
 //  along with this program.
 
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Sanity.Linq.CommonTypes;
 using Sanity.Linq.Extensions;
 using Sanity.Linq.Internal;
+using Sanity.Linq.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,6 +27,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace Sanity.Linq
@@ -501,15 +502,7 @@ namespace Sanity.Linq
                 }
                 else
                 {
-                    var jsonProperty = member.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute;
-                    if (jsonProperty != null)
-                    {
-                        memberPath.Add(jsonProperty.PropertyName);
-                    }
-                    else
-                    {
-                        memberPath.Add(member.Name.ToCamelCase());
-                    }
+                    memberPath.Add(SanityPropertyNames.GetFieldName(member));
                 }
                 if (m.Expression is MemberExpression)
                 {
@@ -630,10 +623,10 @@ namespace Sanity.Linq
             result.Add("...");
             foreach (var prop in props)
             {
-                var isIgnored = prop.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Length > 0;
+                var isIgnored = SanityPropertyNames.IsIgnored(prop);
                 if (!isIgnored)
                 {
-                    var targetName = (prop.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName ?? prop.Name.ToCamelCase();
+                    var targetName = SanityPropertyNames.GetFieldName(prop);
                     var includeAttr = prop.GetCustomAttributes<IncludeAttribute>(true).FirstOrDefault();
                     var sourceName = !string.IsNullOrEmpty(includeAttr?.FieldName) ? includeAttr.FieldName : targetName;
                     var fieldRef = targetName == sourceName ? sourceName : $"\"{targetName}\": {sourceName}";
@@ -652,8 +645,8 @@ namespace Sanity.Linq
                             // Array Case: Recursively add projection list for class types
                             var elementType = listInterface.GetGenericArguments()[0];
 
-                            // Avoid recursion for special case of JObject
-                            if (elementType != typeof(JObject))
+                            // Avoid recursion for the special case of a free-form JSON object
+                            if (!SanityJsonTypes.IsFreeFormJson(elementType))
                             {
                                 var fieldList = GetPropertyProjectionList(elementType, nestingLevel+1, maxNestingLevel);
                                 var listItemProjection = fieldList.Aggregate((c, n) => c + "," + n);
@@ -665,13 +658,18 @@ namespace Sanity.Linq
                         }
                         else
                         {
-                            if (prop.PropertyType == typeof(JObject))
+                            if (SanityJsonTypes.IsFreeFormJson(prop.PropertyType))
                             {
+                                // Schemaless field: project everything and do not walk into
+                                // the DOM type's own members.
                                 result.Add($"{fieldRef}{{...}}");
                             }
-                            // Object Case: Recursively add projection list for class types
-                            var fieldList = GetPropertyProjectionList(prop.PropertyType, nestingLevel+1, maxNestingLevel);
-                            result.Add($"{fieldRef}{{{fieldList.Aggregate((c, n) => c + "," + n)}}}");
+                            else
+                            {
+                                // Object Case: Recursively add projection list for class types
+                                var fieldList = GetPropertyProjectionList(prop.PropertyType, nestingLevel + 1, maxNestingLevel);
+                                result.Add($"{fieldRef}{{{fieldList.Aggregate((c, n) => c + "," + n)}}}");
+                            }
                         }
                     }
                 }                
@@ -724,7 +722,7 @@ namespace Sanity.Linq
                 else
                 {
                     var nestedProperties = propertyType.GetProperties();
-                    var sanityImageAssetProperty = nestedProperties.FirstOrDefault(p => p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(SanityReference<>) && (p.Name.ToLower() == "asset" || ((p.GetCustomAttributes<JsonPropertyAttribute>(true).FirstOrDefault())?.PropertyName?.Equals("asset")).GetValueOrDefault()));
+                    var sanityImageAssetProperty = nestedProperties.FirstOrDefault(p => p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(SanityReference<>) && SanityPropertyNames.RepresentsField(p, "asset"));
                     bool isSanityImage = sanityImageAssetProperty != null;
                     if (isSanityImage)
                     {
@@ -744,7 +742,7 @@ namespace Sanity.Linq
                         if (isNestedSanityReferenceType)
                         {
                             // CASE 4: Property->SanityReference<T> (generalization of Case 3)
-                            var propertyName = nestedSanityReferenceProperty.GetCustomAttribute<JsonPropertyAttribute>()?.PropertyName ?? nestedSanityReferenceProperty.Name.ToCamelCase();
+                            var propertyName = SanityPropertyNames.GetFieldName(nestedSanityReferenceProperty);
                             var fields = GetPropertyProjectionList(propertyType, nestingLevel, maxNestingLevel);
                             var elementType = nestedSanityReferenceProperty.PropertyType.GetGenericArguments()[0];
                             var nestedFields = GetPropertyProjectionList(elementType, nestingLevel+1, maxNestingLevel);
@@ -762,7 +760,7 @@ namespace Sanity.Linq
                             if (isNestedListOfSanityReferenceType)
                             {
                                 // CASE 5: Property->List<SanityReference<T>>
-                                var propertyName = nestedListOfSanityReferenceType.GetCustomAttribute<JsonPropertyAttribute>()?.PropertyName ?? nestedListOfSanityReferenceType.Name.ToCamelCase();
+                                var propertyName = SanityPropertyNames.GetFieldName(nestedListOfSanityReferenceType);
                                 var fields = GetPropertyProjectionList(propertyType, nestingLevel, maxNestingLevel);
                                 var collectionType = nestedListOfSanityReferenceType.PropertyType.GetGenericArguments()[0];
                                 var elementType = collectionType.GetGenericArguments()[0];
@@ -776,7 +774,7 @@ namespace Sanity.Linq
                             else
                             {
                                 
-                                var listOfSanityImagesType = propertyType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>) && i.GetGenericArguments()[0].GetProperties().Any(p => p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(SanityReference<>) && (p.Name.ToLower() == "asset" || ((p.GetCustomAttributes<JsonPropertyAttribute>(true).FirstOrDefault())?.PropertyName?.Equals("asset")).GetValueOrDefault())));
+                                var listOfSanityImagesType = propertyType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>) && i.GetGenericArguments()[0].GetProperties().Any(p => p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(SanityReference<>) && SanityPropertyNames.RepresentsField(p, "asset")));
                                 bool isListOfSanityImages = listOfSanityImagesType != null;
                                 if (isListOfSanityImages)
                                 {
@@ -918,7 +916,7 @@ namespace Sanity.Linq
                     //    foreach (var prop in includedProps)
                     //    {
                     //        var includeAttr = prop.GetCustomAttributes<IncludeAttribute>(true).FirstOrDefault();
-                    //        var targetName = (prop.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName ?? prop.Name.ToCamelCase();
+                    //        var targetName = SanityPropertyNames.GetFieldName(prop);
                     //        var sourceName = !string.IsNullOrEmpty(includeAttr.FieldName) ? includeAttr.FieldName : targetName;
                     //        if (!Includes.ContainsKey(targetName))
                     //        {
@@ -1002,6 +1000,16 @@ namespace Sanity.Linq
                 { SanityConstants.ARRAY_INDICATOR, "__0006__" },
             };
 
+            /// <summary>
+            /// Used only to render the intermediate JSON representation of a projection back
+            /// to text. The relaxed encoder keeps field names verbatim; the default encoder
+            /// would escape non-ASCII characters and produce a broken GROQ projection.
+            /// </summary>
+            private static readonly JsonSerializerOptions GroqJsonOptions = new JsonSerializerOptions
+            {
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            };
+
             private string ExpandIncludesInProjection(string projection, Dictionary<string, string> includes)
             {
                 // Finds and replaces includes in projection by converting projection (GROQ) to an equivelant JSON representation,
@@ -1011,12 +1019,12 @@ namespace Sanity.Linq
                 // This could also be done creating some sort of query tree object, which might be a more appropriate / cleaner solution.
 
                 var jsonProjection = GroqToJson($"{{{projection}}}");
-                var jObjectProjection = JsonConvert.DeserializeObject(jsonProjection) as JObject;
+                var jObjectProjection = JsonNode.Parse(jsonProjection) as JsonObject;
 
                 foreach (var includeKey in Includes.Keys.OrderBy(k => k))
                 {
                     var jsonInclude = GroqToJson($"{{{Includes[includeKey]}}}");
-                    var jObjectInclude = JsonConvert.DeserializeObject(jsonInclude) as JObject;
+                    var jObjectInclude = JsonNode.Parse(jsonInclude) as JsonObject;
 
                     var pathParts = includeKey
                         .Replace(SanityConstants.COLON, GroqTokens[SanityConstants.COLON])
@@ -1026,7 +1034,7 @@ namespace Sanity.Linq
                         .Replace(SanityConstants.DEREFERENCING_OPERATOR, ".")
                         .TrimEnd('.').Split('.');
 
-                    JObject obj = jObjectProjection;
+                    JsonObject obj = jObjectProjection;
                     for (var i = 0; i < pathParts.Length; i++)
                     {
                         var part = pathParts[i];
@@ -1041,16 +1049,16 @@ namespace Sanity.Linq
                                     || property.Key.StartsWith($"{GroqTokens[SanityConstants.STRING_DELIMITOR]}{part}{GroqTokens[SanityConstants.STRING_DELIMITOR]}")
                                     || property.Key.StartsWith(part + GroqTokens[SanityConstants.ARRAY_INDICATOR])
                                     || property.Key.StartsWith(part + GroqTokens[SanityConstants.DEREFERENCING_OPERATOR]))
-                                { 
-                                    obj = obj[property.Key] as JObject;
+                                {
+                                    obj = obj[property.Key] as JsonObject;
                                     propertyExists = true;
                                     break;
                                 }
                             }
                             if (!propertyExists)
                             {
-                                obj[part] = new JObject();
-                                obj = obj[part] as JObject;
+                                obj[part] = new JsonObject();
+                                obj = obj[part] as JsonObject;
                             }
                         }
                         else
@@ -1080,7 +1088,10 @@ namespace Sanity.Linq
                                     || include.Key.StartsWith(part + GroqTokens[SanityConstants.ARRAY_INDICATOR])
                                     || include.Key.StartsWith(part + GroqTokens[SanityConstants.DEREFERENCING_OPERATOR]))
                                 {
-                                    obj[include.Key] = include.Value;
+                                    // DeepClone is required: include.Value is still attached
+                                    // to jObjectInclude, and System.Text.Json refuses to
+                                    // attach a node that already has a parent.
+                                    obj[include.Key] = include.Value?.DeepClone();
                                     break;
                                 }
                             }
@@ -1089,12 +1100,19 @@ namespace Sanity.Linq
                 }
 
                 // Convert back to JSON
-                jsonProjection = jObjectProjection.ToString(Formatting.None);
+                jsonProjection = jObjectProjection.ToJsonString(GroqJsonOptions);
                 // Convert JSON back to GROQ query
                 projection = JsonToGroq(jsonProjection);
 
                 return projection;
             }
+
+            /// <summary>
+            /// Matches a bare field name immediately followed by a projection block, so it can
+            /// be quoted. Field names are alphanumeric by the time this runs: GROQ's operators
+            /// have already been swapped for the __000n__ placeholders.
+            /// </summary>
+            private static readonly Regex reObjectField = new Regex("([^\"{}\\[\\],:]+)\\{");
 
             private string GroqToJson(string groq)
             {
@@ -1103,8 +1121,11 @@ namespace Sanity.Linq
                 {
                     json = json.Replace(token, GroqTokens[token]);
                 }
-                json = json.Replace("{", ":{")
-                .TrimStart(':');                                
+                // Turn "field{" into a quoted object-valued property: "field":{
+                //
+                // 1.x relied on Newtonsoft accepting unquoted property names here.
+                // System.Text.Json only parses strict JSON, so the name is quoted up front.
+                json = reObjectField.Replace(json, "\"$1\":{");
 
                 // Replace variable names with valid json (e.g. convert myField to "myField":true)
                 var reVariables = new Regex("(,|{)([^\"}:,]+)(,|})");

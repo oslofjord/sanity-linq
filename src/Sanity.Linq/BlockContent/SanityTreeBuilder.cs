@@ -1,79 +1,80 @@
-﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Sanity.Linq.Json;
+using System.Text.Json.Nodes;
 
 namespace Sanity.Linq.BlockContent
 {
     public class SanityTreeBuilder
     {
-        public JArray Build(JArray blockArray)
+        public JsonArray Build(JsonArray blockArray)
         {
             // set list trees / listItem = bullet | number && level != null
             var currentListType = "";
             for (int i = 0; i < blockArray.Count; i++)
             {
-                JObject item = (JObject)blockArray[i];
+                JsonObject item = (JsonObject)blockArray[i];
 
-                if ((string)blockArray[i]["listItem"] == "bullet")
+                if (ListItem(blockArray, i) == "bullet")
                 {
                     //check if first in bullet array
                     if (currentListType == "" && !item.ContainsKey("firstItem"))
                     {
-                        item.Add(new JProperty("firstItem", true));
+                        item["firstItem"] = true;
                     }
 
                     currentListType = "bullet";
 
-                    // check if last in array, also last in bullet array 
+                    // check if last in array, also last in bullet array
                     if (blockArray.Count == i+1)
                     {
                         if (!item.ContainsKey("lastItem"))
                         {
-                            item.Add(new JProperty("lastItem", true));
+                            item["lastItem"] = true;
                         }
                         currentListType = "";
                         break;
                     }
 
                     //in the middle of array but last of bullet array
-                    if (currentListType == "bullet" && (string)blockArray[i + 1]["listItem"] == null || (string)blockArray[i + 1]["listItem"] == "number")
+                    if (currentListType == "bullet" && ListItem(blockArray, i + 1) == null || ListItem(blockArray, i + 1) == "number")
                     {
                         if (!item.ContainsKey("lastItem"))
                         {
-                            item.Add(new JProperty("lastItem", true));
+                            item["lastItem"] = true;
                         }
                         currentListType = "";
                     }
                 }
 
-                if ((string)blockArray[i]["listItem"] == "number")
+                if (ListItem(blockArray, i) == "number")
                 {
                     //check if first in bullet array
                     if (currentListType == "" && !item.ContainsKey("firstItem"))
                     {
-                        item.Add(new JProperty("firstItem", true));
+                        item["firstItem"] = true;
                     }
 
                     currentListType = "number";
 
-                    // check if last in array, also last in bullet array 
+                    // check if last in array, also last in bullet array
                     if (blockArray.Count == i + 1)
                     {
                         if (!item.ContainsKey("lastItem"))
                         {
-                            item.Add(new JProperty("lastItem", true));
+                            item["lastItem"] = true;
                         }
                         currentListType = "";
                         break;
                     }
 
                     //in the middle of array but last of bullet array
-                    if (currentListType == "number" && (string)blockArray[i + 1]["listItem"] == null || (string)blockArray[i + 1]["listItem"] == "bullet")
+                    if (currentListType == "number" && ListItem(blockArray, i + 1) == null || ListItem(blockArray, i + 1) == "bullet")
                     {
                         if (!item.ContainsKey("lastItem"))
                         {
-                            item.Add(new JProperty("lastItem", true));
+                            item["lastItem"] = true;
                         }
                         currentListType = "";
                     }
@@ -81,6 +82,14 @@ namespace Sanity.Linq.BlockContent
             }
 
             return blockArray;
+        }
+
+        /// <summary>
+        /// The "listItem" value of a block, or null when the block does not have one.
+        /// </summary>
+        private static string ListItem(JsonArray blockArray, int index)
+        {
+            return SanityJsonNode.GetString(blockArray[index], "listItem");
         }
     }
 }

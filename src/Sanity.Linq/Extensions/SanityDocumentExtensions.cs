@@ -13,9 +13,8 @@
 //  You should have received a copy of the MIT Licence
 //  along with this program.
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Sanity.Linq.BlockContent;
+using Sanity.Linq.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -205,77 +204,27 @@ namespace Sanity.Linq.Extensions
             return default(T);
         }
 
-        private static ConcurrentDictionary<Type, PropertyInfo> _idPropertyCache = new ConcurrentDictionary<Type, PropertyInfo>();
-        private static PropertyInfo GetIdProperty(this Type type)
+        // System field -> property lookups, cached per (type, field). Resolution honours both
+        // [JsonPropertyName] and 1.x's [JsonProperty]; see SanityPropertyNames.
+        private static readonly ConcurrentDictionary<(Type, string), PropertyInfo> _systemFieldProperties =
+            new ConcurrentDictionary<(Type, string), PropertyInfo>();
+
+        private static PropertyInfo GetSystemFieldProperty(this Type type, string fieldName)
         {
-            if (!_idPropertyCache.ContainsKey(type))
-            {
-                var props = type.GetProperties();
-                var idProperty = props.FirstOrDefault(p => p.Name.Equals("_id", StringComparison.InvariantCultureIgnoreCase) ||
-                                           (p.GetCustomAttribute<JsonPropertyAttribute>(true) != null && p.GetCustomAttribute<JsonPropertyAttribute>(true).PropertyName == "_id"));
-                _idPropertyCache[type] = idProperty;
-            }
-            return _idPropertyCache[type];
+            return _systemFieldProperties.GetOrAdd(
+                (type, fieldName),
+                key => SanityPropertyNames.FindPropertyForField(key.Item1, key.Item2));
         }
 
+        private static PropertyInfo GetIdProperty(this Type type) => type.GetSystemFieldProperty("_id");
 
-        private static ConcurrentDictionary<Type, PropertyInfo> _typePropertyCache = new ConcurrentDictionary<Type, PropertyInfo>();
-        private static PropertyInfo GetTypeProperty(this Type type)
-        {
-            if (!_typePropertyCache.ContainsKey(type))
-            {
-                var props = type.GetProperties();
-                var typeProperty = props.FirstOrDefault(p => p.Name.Equals("_type", StringComparison.InvariantCultureIgnoreCase) ||
-                                                           (p.GetCustomAttribute<JsonPropertyAttribute>(true) != null && p.GetCustomAttribute<JsonPropertyAttribute>(true).PropertyName == "_type"));
+        private static PropertyInfo GetTypeProperty(this Type type) => type.GetSystemFieldProperty("_type");
 
-                _typePropertyCache[type] = typeProperty;
-            }
-            return _typePropertyCache[type];
-        }
+        private static PropertyInfo GetRevisionProperty(this Type type) => type.GetSystemFieldProperty("_rev");
 
+        private static PropertyInfo GetCreatedAtProperty(this Type type) => type.GetSystemFieldProperty("_createdAt");
 
-        private static ConcurrentDictionary<Type, PropertyInfo> _revPropertyCache = new ConcurrentDictionary<Type, PropertyInfo>();
-        private static PropertyInfo GetRevisionProperty(this Type type)
-        {
-            if (!_revPropertyCache.ContainsKey(type))
-            {
-                var props = type.GetProperties();
-                var revProperty = props.FirstOrDefault(p => p.Name.Equals("_rev", StringComparison.InvariantCultureIgnoreCase) ||
-                                                           (p.GetCustomAttribute<JsonPropertyAttribute>(true) != null && p.GetCustomAttribute<JsonPropertyAttribute>(true).PropertyName == "_rev"));
-
-                _revPropertyCache[type] = revProperty;
-            }
-            return _revPropertyCache[type];
-        }
-
-
-        private static ConcurrentDictionary<Type, PropertyInfo> _createdAtPropertyCache = new ConcurrentDictionary<Type, PropertyInfo>();
-        private static PropertyInfo GetCreatedAtProperty(this Type type)
-        {
-            if (!_createdAtPropertyCache.ContainsKey(type))
-            {
-                var props = type.GetProperties();
-                var revProperty = props.FirstOrDefault(p => p.Name.Equals("_createdAt", StringComparison.InvariantCultureIgnoreCase) ||
-                                                           (p.GetCustomAttribute<JsonPropertyAttribute>(true) != null && p.GetCustomAttribute<JsonPropertyAttribute>(true).PropertyName == "_createdAt"));
-
-                _createdAtPropertyCache[type] = revProperty;
-            }
-            return _createdAtPropertyCache[type];
-        }
-
-        private static ConcurrentDictionary<Type, PropertyInfo> _updatedAtPropertyCache = new ConcurrentDictionary<Type, PropertyInfo>();
-        private static PropertyInfo GetUpdatedAtProperty(this Type type)
-        {
-            if (!_updatedAtPropertyCache.ContainsKey(type))
-            {
-                var props = type.GetProperties();
-                var revProperty = props.FirstOrDefault(p => p.Name.Equals("_updatedAt", StringComparison.InvariantCultureIgnoreCase) ||
-                                                           (p.GetCustomAttribute<JsonPropertyAttribute>(true) != null && p.GetCustomAttribute<JsonPropertyAttribute>(true).PropertyName == "_updatedAt"));
-
-                _updatedAtPropertyCache[type] = revProperty;
-            }
-            return _updatedAtPropertyCache[type];
-        }
+        private static PropertyInfo GetUpdatedAtProperty(this Type type) => type.GetSystemFieldProperty("_updatedAt");
 
 
         public static Task<string> ToHtmlAsync(this object blockContent, SanityHtmlBuilder builder)

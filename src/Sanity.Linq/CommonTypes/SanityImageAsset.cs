@@ -13,7 +13,7 @@
 //  You should have received a copy of the MIT Licence
 //  along with this program.
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -30,7 +30,7 @@ namespace Sanity.Linq.CommonTypes
 
     public class SanityImageAssetReference : SanityImageAsset
     {
-        [JsonProperty("_ref")]
+        [JsonPropertyName("_ref")]
         public string Ref { get; set; }
     }
 }

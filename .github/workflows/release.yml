@@ -44,8 +44,18 @@ jobs:
             echo "target=github" >> "$GITHUB_OUTPUT"
           fi
 
+      # Both packages are versioned and published in lockstep: Sanity.Linq.Newtonsoft
+      # targets one specific core version, and passing PackageVersion here also sets the
+      # version it depends on.
       - name: Pack
-        run: dotnet pack src/Sanity.Linq/Sanity.Linq.csproj -c Release -p:PackageVersion=${{ steps.pkg.outputs.version }} -p:GeneratePackageOnBuild=false -o ./artifacts
+        run: |
+          set -euo pipefail
+          for project in src/Sanity.Linq/Sanity.Linq.csproj src/Sanity.Linq.Newtonsoft/Sanity.Linq.Newtonsoft.csproj; do
+            dotnet pack "$project" -c Release \
+              -p:PackageVersion=${{ steps.pkg.outputs.version }} \
+              -p:GeneratePackageOnBuild=false \
+              -o ./artifacts
+          done
 
       - name: Push dev prerelease to GitHub Packages
         if: ${{ steps.pkg.outputs.target == 'github' }}

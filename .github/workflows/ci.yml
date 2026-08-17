@@ -26,6 +26,19 @@ jobs:
       - name: Build
         run: dotnet build sanity-linq.sln -c Release --no-restore -p:GeneratePackageOnBuild=false
 
+      # Offline tests: no credentials, no network, non-destructive. These are the golden
+      # suite that pins GROQ / mutation payload / HTML output, plus the Newtonsoft
+      # compatibility tests. The core test project is filtered because its other classes
+      # are live integration tests (see the integration-tests job below).
+      - name: Test (offline)
+        run: |
+          set -euo pipefail
+          dotnet test tests/Sanity.Linq.Tests/Sanity.Linq.Tests.csproj \
+            -c Release --no-build --verbosity normal \
+            --filter "FullyQualifiedName~Sanity.Linq.Tests.Golden"
+          dotnet test tests/Sanity.Linq.Newtonsoft.Tests/Sanity.Linq.Newtonsoft.Tests.csproj \
+            -c Release --no-build --verbosity normal
+
       - name: Scan for vulnerable packages
         run: |
           set -euo pipefail
@@ -37,7 +50,11 @@ jobs:
           fi
 
       - name: Pack
-        run: dotnet pack src/Sanity.Linq/Sanity.Linq.csproj -c Release --no-build -p:GeneratePackageOnBuild=false -o ./artifacts
+        run: |
+          set -euo pipefail
+          for project in src/Sanity.Linq/Sanity.Linq.csproj src/Sanity.Linq.Newtonsoft/Sanity.Linq.Newtonsoft.csproj; do
+            dotnet pack "$project" -c Release --no-build -p:GeneratePackageOnBuild=false -o ./artifacts
+          done
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v7

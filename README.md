@@ -25,6 +25,12 @@ PM> Install-Package Sanity.Linq
 > dotnet add package Sanity.Linq
 ```
 
+> **Upgrading from 1.x?**
+> Version 2.0 replaced Newtonsoft.Json with `System.Text.Json`. See **[MIGRATION.md](MIGRATION.md)**.
+> Most code only needs a recompile; models using `[JsonProperty]`, custom `JsonSerializerSettings`
+> or `JToken` block content serializers need a small change, or the optional
+> [`Sanity.Linq.Newtonsoft`](MIGRATION.md#the-compatibility-package) package to keep working as-is.
+
 
 ## Getting Started
 
@@ -53,14 +59,16 @@ Start by defining entity classes which match documents in Sanity.
 > POCO Entity with zero dependencies on Sanity Linq.
 ``` csharp
 // Example
+using System.Text.Json.Serialization;
+
 public class Category
 {
-    // Use of JsonProperty to serialize to Sanity _id field.
-    [JsonProperty("_id")]
+    // Use of JsonPropertyName to serialize to Sanity _id field.
+    [JsonPropertyName("_id")]
     public string CategoryId { get; set; }
 
     // Type field is also required
-    [JsonProperty("_type")]
+    [JsonPropertyName("_type")]
     public string DocumentType => "category";
 
     public string Title { get; set; }
@@ -321,7 +329,7 @@ When you use the block editor in Sanity, it produces a structured array structur
 ```csharp
 // Create a stand-alone instance:
 var builder = new SanityHtmlBuilder(Options);
-var html = await builder.BuildAsync(myBlockContent); //Block content can be a string, JObject or POCO
+var html = await builder.BuildAsync(myBlockContent); //Block content can be a string, JsonNode or POCO
 
 // Access via existing SanityContext:
 var sanity = new SanityDataContext(Options);
@@ -341,6 +349,20 @@ sanity.HtmlBuilder.AddSerializer("myType", MySerializerFn);
 sanity.AddHtmlSerializer("myType", MySerializerFn);
 // or 
 builder.AddSerializer("myType", MySerializerFn);
+```
+
+A serializer receives the block as a `System.Text.Json.Nodes.JsonNode`:
+
+```csharp
+using System.Text.Json.Nodes;
+using Sanity.Linq.Json;
+
+Task<string> MySerializerFn(JsonNode block, SanityOptions options)
+{
+    // JsonNode indexers throw on a missing field; the SanityJsonNode helpers return null.
+    var title = SanityJsonNode.GetString(block, "title");
+    return Task.FromResult($"<div>{title}</div>");
+}
 ```
 
 The HTML builder supports serializing BlockContent arrays as well as single fields (such as an image field):
