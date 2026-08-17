@@ -15,14 +15,3 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
-
-  # The /sanity folder is an internal Studio used only for local development and
-  # testing of the library — it is not part of the shipped NuGet package.
-  # Disable routine version-update PRs here to avoid noisy "vulnerability" PRs on
-  # a public library for dev-only tooling. (Note: repo-wide Dependabot *security*
-  # updates are governed by the "Dependabot security updates" setting, not here.)
-  - package-ecosystem: npm
-    directory: "/sanity"
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 0
