@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore sanity-linq.sln
+
+      - name: Build
+        run: dotnet build sanity-linq.sln -c Release --no-restore -p:GeneratePackageOnBuild=false
+
+      - name: Scan for vulnerable packages
+        run: |
+          set -euo pipefail
+          output=$(dotnet list sanity-linq.sln package --vulnerable --include-transitive 2>&1)
+          echo "$output"
+          if echo "$output" | grep -q "has the following vulnerable packages"; then
+            echo "::error::Vulnerable NuGet packages detected"
+            exit 1
+          fi
+
+      - name: Pack
+        run: dotnet pack src/Sanity.Linq/Sanity.Linq.csproj -c Release --no-build -p:GeneratePackageOnBuild=false -o ./artifacts
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nupkg
+          path: ./artifacts/*.nupkg
+
+  # Integration tests hit a live Sanity project and are destructive (they delete
+  # all documents in the dataset). They only run on pushes to the canonical repo,
+  # never on pull requests (which can't access secrets and may come from forks).
+  # NOTE: TestBase must be refactored to read ProjectId/Token from these env vars
+  # instead of hardcoded values before this job is meaningful/safe.
+  integration-tests:
+    if: github.event_name == 'push' && github.repository == 'oslofjord/sanity-linq'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Test
+        env:
+          SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          SANITY_TOKEN: ${{ secrets.SANITY_TOKEN }}
+        run: dotnet test sanity-linq.sln -c Release --verbosity normal
