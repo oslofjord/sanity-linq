@@ -1,18 +1,18 @@
 name: Release
 
-# Publishing is manual — run this workflow from the Actions tab.
-#  - default: packs a "-dev.N" prerelease and pushes it to GitHub Packages for testing.
-#  - check "publish_nuget": packs the csproj version and publishes it to NuGet.org
-#    via OIDC Trusted Publishing (no stored API key). Requires a Trusted Publishing
-#    policy on nuget.org: Repository Owner = oslofjord, Repository = sanity-linq,
-#    Workflow File = release.yml. Set secret NUGET_USER to your nuget.org username.
+# Publishing:
+#  - Publish a GitHub Release (tag vX.Y.Z or vX.Y.Z-rc.N) -> the package is packed
+#    at that exact version and pushed to NuGet.org via OIDC Trusted Publishing.
+#    A SemVer pre-release suffix (e.g. -rc.1) lands on NuGet's prerelease channel.
+#  - Run manually (workflow_dispatch) -> packs a "-dev.N" build to GitHub Packages
+#    for quick local testing (no NuGet.org publish).
+# Trusted Publishing policy required on nuget.org: Repository Owner = oslofjord,
+# Repository = sanity-linq, Workflow File = release.yml. Secret NUGET_USER = your
+# nuget.org username.
 on:
+  release:
+    types: [published]
   workflow_dispatch:
-    inputs:
-      publish_nuget:
-        description: 'Publish stable package to NuGet.org (otherwise a dev prerelease goes to GitHub Packages)'
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -30,25 +30,25 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Read base version from csproj
-        id: base
-        run: echo "version=$(grep -oPm1 '(?<=<Version>)[^<]+' src/Sanity.Linq/Sanity.Linq.csproj)" >> "$GITHUB_OUTPUT"
-
-      - name: Compute package version
+      - name: Compute package version and target
         id: pkg
         run: |
           set -euo pipefail
-          if [[ "${{ inputs.publish_nuget }}" == "true" ]]; then
-            echo "version=${{ steps.base.outputs.version }}" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            # Tag drives the version, e.g. v1.8.0 or v1.8.0-rc.1
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+            echo "target=nuget" >> "$GITHUB_OUTPUT"
           else
-            echo "version=${{ steps.base.outputs.version }}-dev.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+            base=$(grep -oPm1 '(?<=<Version>)[^<]+' src/Sanity.Linq/Sanity.Linq.csproj)
+            echo "version=${base}-dev.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+            echo "target=github" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Pack
         run: dotnet pack src/Sanity.Linq/Sanity.Linq.csproj -c Release -p:PackageVersion=${{ steps.pkg.outputs.version }} -p:GeneratePackageOnBuild=false -o ./artifacts
 
       - name: Push dev prerelease to GitHub Packages
-        if: ${{ ! inputs.publish_nuget }}
+        if: ${{ steps.pkg.outputs.target == 'github' }}
         run: >
           dotnet nuget push "./artifacts/*.nupkg"
           --source "https://nuget.pkg.github.com/oslofjord/index.json"
@@ -56,14 +56,14 @@ jobs:
           --skip-duplicate
 
       - name: NuGet login (OIDC trusted publishing)
-        if: ${{ inputs.publish_nuget }}
+        if: ${{ steps.pkg.outputs.target == 'nuget' }}
         id: login
         uses: NuGet/login@v1
         with:
           user: ${{ secrets.NUGET_USER }}
 
-      - name: Push stable to NuGet.org
-        if: ${{ inputs.publish_nuget }}
+      - name: Push to NuGet.org
+        if: ${{ steps.pkg.outputs.target == 'nuget' }}
         run: >
           dotnet nuget push "./artifacts/*.nupkg"
           --source "https://api.nuget.org/v3/index.json"
