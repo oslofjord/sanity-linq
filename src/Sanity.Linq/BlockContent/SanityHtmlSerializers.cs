@@ -133,7 +133,7 @@ namespace Sanity.Linq.BlockContent
                 text.Append(start.ToString() + child["text"] + end.ToString());
             }
 
-            var result = $"{listStart}{listItemStart}<{tag}>{text}</{tag}>{listItemEnd}{listEnd}".Replace("\n","</br>");
+            var result = $"{listStart}{listItemStart}<{tag}>{text}</{tag}>{listItemEnd}{listEnd}".Replace("\n","<br />");
 
             return Task.FromResult(result);
 
