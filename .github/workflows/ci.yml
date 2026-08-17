@@ -46,12 +46,11 @@ jobs:
           path: ./artifacts/*.nupkg
 
   # Integration tests hit a live Sanity project and are destructive (they delete
-  # all documents in the dataset). They only run on pushes to the canonical repo,
-  # never on pull requests (which can't access secrets and may come from forks).
-  # NOTE: TestBase must be refactored to read ProjectId/Token from these env vars
-  # instead of hardcoded values before this job is meaningful/safe.
+  # all documents in the dataset). Opt-in only: set repo variable
+  # RUN_INTEGRATION_TESTS=true and provide the SANITY_* secrets. They never run on
+  # pull requests (which can't access secrets and may come from forks).
   integration-tests:
-    if: github.event_name == 'push' && github.repository == 'oslofjord/sanity-linq'
+    if: github.event_name == 'push' && github.repository == 'oslofjord/sanity-linq' && vars.RUN_INTEGRATION_TESTS == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
