@@ -7,9 +7,15 @@ The JSON serializer is not purely an implementation detail of this library — i
 the public API and in your own model classes — so 2.0 is a breaking release. This guide
 covers what changed, and how to keep 1.x code working while you migrate.
 
-**The wire format did not change.** GROQ queries, mutation payloads and `ToHtml` output are
-byte-for-byte the same as 1.x, apart from the two fixes and the one naming change called out
-below. This is enforced by an offline golden test suite.
+**The wire format did not change.** Mutation payloads, `ToHtml` output and GROQ queries are
+byte-for-byte the same as 1.x, with one exception: chained query operators no longer repeat
+the sort key, so `.OrderBy(p => p.Title).Skip(5).Take(10)` emitted
+`order(title asc, title asc, title asc, title asc)` and now emits `order(title asc)`. Results
+were already ordered correctly, so this only matters if you assert on query text. All of this
+is enforced by an offline golden test suite.
+
+2.0 fixes other pre-existing bugs too; those need no action and are listed in the package
+release notes.
 
 ---
 
@@ -22,6 +28,7 @@ below. This is enforced by an offline golden test suite.
 | passes custom `JsonSerializerSettings`                   | Install `Sanity.Linq.Newtonsoft` and add `.ToSerializerOptions()`.    |
 | registers custom block content serializers              | Change `JToken` to `JsonNode`, or install `Sanity.Linq.Newtonsoft`.   |
 | subclasses `SanityHtmlBuilder` / `SanityTreeBuilder` / `SanityHtmlSerializers` | Update the overridden signatures by hand. Not covered by the compat package. |
+| asserts on generated GROQ strings                        | `order(...)` no longer repeats sort keys. Update those assertions.     |
 
 ---
 
@@ -228,42 +235,3 @@ manual updates:
 - **Catching `Newtonsoft.Json.JsonException`** from library calls. Serialization failures are
   wrapped in `SanitySerializationException` (introduced in 1.8.0); catch that, or
   `SanityException` for any Sanity-domain failure.
-
----
-
-## 5. Fixes included in 2.0
-
-Two pre-existing defects were fixed as part of the rewrite. Both change behaviour for the
-better, and both are covered by tests.
-
-- **Dereferenced references carrying `_key` or `_weak` no longer throw.** In 1.x the raw JSON
-  token was assigned straight onto the `string` / `bool?` property, producing
-  `ArgumentException: Object of type 'Newtonsoft.Json.Linq.JValue' cannot be converted to
-  type 'System.String'`. Sanity emits `_key` for objects inside arrays, so any projection
-  that dereferenced such a reference failed.
-- **Schemaless fields project correctly.** A field typed as a free-form JSON object emitted
-  `field{...}` *and* a second projection built from the DOM type's own CLR members. Free-form
-  fields now emit `{...}` only, and `JsonObject`, `JsonNode` and `JsonElement` are recognised
-  alongside Newtonsoft's `JObject`.
-- **Ordering clauses are no longer repeated.** The expression tree was walked twice at every
-  level — once by `Visit`, once by the individual query operators — so the innermost call was
-  visited 2^depth times and each ordering was appended once per visit:
-
-  ```
-  // 1.x
-  posts.OrderBy(p => p.Title).Skip(5).Take(10)
-  // -> ... | order(title asc, title asc, title asc, title asc) [5..14]
-  posts.OrderBy(p => p.Title).ThenBy(p => p.Id)
-  // -> ... | order(title asc, _id asc, title asc)
-
-  // 2.0
-  // -> ... | order(title asc) [5..14]
-  // -> ... | order(title asc, _id asc)
-  ```
-
-  Results were already correctly ordered in 1.x — the repeated keys were redundant rather
-  than wrong — so this changes the query text, not what Sanity returns. Constraints were
-  duplicated by the same traversal, but `Distinct()` was already hiding that, so `Where`
-  clauses are unaffected.
-
-  If you assert on generated GROQ strings anywhere, those assertions will need updating.
