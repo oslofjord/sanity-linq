@@ -245,11 +245,25 @@ better, and both are covered by tests.
   `field{...}` *and* a second projection built from the DOM type's own CLR members. Free-form
   fields now emit `{...}` only, and `JsonObject`, `JsonNode` and `JsonElement` are recognised
   alongside Newtonsoft's `JObject`.
+- **Ordering clauses are no longer repeated.** The expression tree was walked twice at every
+  level — once by `Visit`, once by the individual query operators — so the innermost call was
+  visited 2^depth times and each ordering was appended once per visit:
 
-## 6. Known issue, unchanged
+  ```
+  // 1.x
+  posts.OrderBy(p => p.Title).Skip(5).Take(10)
+  // -> ... | order(title asc, title asc, title asc, title asc) [5..14]
+  posts.OrderBy(p => p.Title).ThenBy(p => p.Id)
+  // -> ... | order(title asc, _id asc, title asc)
 
-`OrderBy(...)` combined with `Skip`/`Take` repeats the ordering clause once per re-visit of
-the expression tree — `order(title asc, title asc, title asc, title asc)`. The query is still
-valid and correctly ordered. This predates 2.0 and was deliberately left alone so the
-migration is provably behaviour-preserving; it is pinned by a golden test and tracked
-separately.
+  // 2.0
+  // -> ... | order(title asc) [5..14]
+  // -> ... | order(title asc, _id asc)
+  ```
+
+  Results were already correctly ordered in 1.x — the repeated keys were redundant rather
+  than wrong — so this changes the query text, not what Sanity returns. Constraints were
+  duplicated by the same traversal, but `Distinct()` was already hiding that, so `Where`
+  clauses are unaffected.
+
+  If you assert on generated GROQ strings anywhere, those assertions will need updating.

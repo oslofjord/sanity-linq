@@ -78,12 +78,8 @@ namespace Sanity.Linq.Tests.Golden
         [Fact]
         public void OrderBy_with_skip_and_take()
         {
-            // KNOWN DEFECT (pre-dates the System.Text.Json migration): combining OrderBy with
-            // Skip/Take repeats the ordering clause once per re-visit of the expression tree.
-            // Pinned as-is so the migration is provably behaviour-preserving; fixing it is a
-            // separate change that should update this golden deliberately.
             Assert.Equal(
-                "*[_type == \"post\"]" + PostProjection + " | order(title asc, title asc, title asc, title asc) [5..14]",
+                "*[_type == \"post\"]" + PostProjection + " | order(title asc) [5..14]",
                 Sanity.DocumentSet<Post>().OrderBy(p => p.Title).Skip(5).Take(10).GetSanityQuery());
         }
 

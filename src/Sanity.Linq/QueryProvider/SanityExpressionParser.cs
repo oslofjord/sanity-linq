@@ -99,13 +99,13 @@ namespace Sanity.Linq
             }
             if (expression is MethodCallExpression m)
             {
+                // The source argument is walked by the individual cases in
+                // TransformMethodCallExpression, before they record their own contribution to
+                // the query. Walking it here as well would traverse the whole chain a second
+                // time at every level - 2^depth visits of the innermost call - which appended
+                // each ordering repeatedly. See OrderingTests.
                 TransformMethodCallExpression(m);
-                if (!(m.Arguments[0] is ConstantExpression))
-                {
-                    Visit(m.Arguments[0]);
-                }
                 return expression;
-
             }
             return base.Visit(expression);
         }
@@ -317,6 +317,7 @@ namespace Sanity.Linq
                 case "Include":
                     {
                         //Arg 0: Source
+                        Visit(e.Arguments[0]);
 
                         // Arg 1: Field to join
                         if (e.Arguments[1] is UnaryExpression u && u.Operand is LambdaExpression l)
