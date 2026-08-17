@@ -233,7 +233,7 @@ namespace Sanity.Linq
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"Failed to deserialize Sanity response: {content}", ex);
+                    throw new SanitySerializationException($"Failed to deserialize Sanity response: {content}", ex);
                 }
             }
             else

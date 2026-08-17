@@ -193,7 +193,7 @@ namespace Sanity.Linq
                         }
                         else
                         {
-                            throw new Exception("StartsWith is only supported for constant expressions");
+                            throw new SanityQueryException("StartsWith is only supported for constant expressions");
                         }
 
                         return $"{memberName} match \"{value}*\"";
@@ -258,7 +258,7 @@ namespace Sanity.Linq
                             var memberName2 = TransformOperand(e.Arguments[1]);
                             return $"{memberName2} in {memberName1}";
                         }
-                        throw new Exception("'Contains' is only supported for simple expressions with non-null values.");
+                        throw new SanityQueryException("'Contains' is only supported for simple expressions with non-null values.");
                         
                     }
                 case "GetValue`1":
@@ -274,7 +274,7 @@ namespace Sanity.Linq
                                 return $"{fieldName}";
                             }
                         }
-                        throw new Exception("Could not evaluate GetValue method");
+                        throw new SanityQueryException("Could not evaluate GetValue method");
                     }
                 case "Where":
                     {
@@ -282,7 +282,7 @@ namespace Sanity.Linq
                         var elementType = TypeSystem.GetElementType(e.Arguments[0].Type);
                         if (elementType != DocType)
                         {
-                            throw new Exception("Where expressions are only supported on the root type.");
+                            throw new SanityQueryException("Where expressions are only supported on the root type.");
                         }
                         Visit(e.Arguments[0]);
 
@@ -293,7 +293,7 @@ namespace Sanity.Linq
                             QueryBuilder.Constraints.Add(constraint);
                             return constraint;
                         }
-                        throw new Exception("Syntax of Select expression not supported.");
+                        throw new SanityQueryException("Syntax of Select expression not supported.");
                     }
                 case "Select":
                     {
@@ -305,13 +305,13 @@ namespace Sanity.Linq
                         {
                             if (l.Body is MemberExpression m && (m.Type.IsPrimitive || m.Type == typeof(string)))
                             {
-                                throw new Exception($"Selecting '{m.Member.Name}' as a scalor value is not supported due to serialization limitations. Instead, create an anonymous object containing the '{m.Member.Name}' field. e.g. o => new {{ o.{m.Member.Name} }}.");
+                                throw new SanityQueryException($"Selecting '{m.Member.Name}' as a scalor value is not supported due to serialization limitations. Instead, create an anonymous object containing the '{m.Member.Name}' field. e.g. o => new {{ o.{m.Member.Name} }}.");
                             }
                             var projection = TransformOperand(l.Body);
                             QueryBuilder.Projection = projection;
                             return projection;
                         }
-                        throw new Exception("Syntax of Select expression not supported.");
+                        throw new SanityQueryException("Syntax of Select expression not supported.");
                     }
                 case "Include":
                     {
@@ -341,7 +341,7 @@ namespace Sanity.Linq
                                 return projection;
                             }
                         }
-                        throw new Exception("Joins can only be applied to properties.");
+                        throw new SanityQueryException("Joins can only be applied to properties.");
 
                     }
                 case "IsNullOrEmpty":
@@ -401,13 +401,13 @@ namespace Sanity.Linq
                             var declaringType = l.Parameters[0].Type;
                             if (declaringType != DocType)
                             {
-                                throw new Exception($"Ordering is only supported on root document type {DocType.Name ?? ""}");
+                                throw new SanityQueryException($"Ordering is only supported on root document type {DocType.Name ?? ""}");
                             }
                             var ordering = TransformOperand(l.Body) + " asc";
                             QueryBuilder.Orderings.Add(ordering);
                             return ordering;
                         }
-                        throw new Exception("Order by expression not supported.");
+                        throw new SanityQueryException("Order by expression not supported.");
                     }
                 case "OrderByDescending":
                 case "ThenByDescending":
@@ -421,13 +421,13 @@ namespace Sanity.Linq
                             var declaringType = l.Parameters[0].Type;
                             if (declaringType != DocType)
                             {
-                                throw new Exception($"Ordering is only supported on root document type {DocType.Name ?? ""}");
+                                throw new SanityQueryException($"Ordering is only supported on root document type {DocType.Name ?? ""}");
                             }
                             var ordering = TransformOperand(l.Body) + " desc";
                             QueryBuilder.Orderings.Add(ordering);
                             return ordering;
                         }
-                        throw new Exception("Order by descending expression not supported.");
+                        throw new SanityQueryException("Order by descending expression not supported.");
                     }
                 case "Count":
                 case "LongCount":
@@ -449,7 +449,7 @@ namespace Sanity.Linq
                             QueryBuilder.Take = (int)c.Value;
                             return QueryBuilder.Take.ToString();
                         }
-                        throw new Exception("Format for Take expression not supported.");
+                        throw new SanityQueryException("Format for Take expression not supported.");
                     }
                 case "Skip":
                     {
@@ -462,11 +462,11 @@ namespace Sanity.Linq
                             QueryBuilder.Skip = (int)c.Value;
                             return QueryBuilder.Skip.ToString();
                         }
-                        throw new Exception("Format for Skip expression not supported.");
+                        throw new SanityQueryException("Format for Skip expression not supported.");
                     }
                 default:
                     {
-                        throw new Exception($"Method call {e.Method.Name} not supported.");
+                        throw new SanityQueryException($"Method call {e.Method.Name} not supported.");
                     }
             }
         }
@@ -481,7 +481,7 @@ namespace Sanity.Linq
             {
                 return TransformOperand(u.Operand);
             }
-            throw new Exception($"Unary expression of type {u.GetType()} and nodeType {u.NodeType} not supported. ");
+            throw new SanityQueryException($"Unary expression of type {u.GetType()} and nodeType {u.NodeType} not supported. ");
         }
 
         protected string TransformOperand(Expression e)
@@ -540,7 +540,7 @@ namespace Sanity.Linq
                     }
                     return projection.Aggregate((pc, pn) => $"{pc}, {pn}");
                 }
-                throw new Exception("Selections must be anonymous types without a constructor.");
+                throw new SanityQueryException("Selections must be anonymous types without a constructor.");
             }
 
             // Binary
@@ -613,7 +613,7 @@ namespace Sanity.Linq
                 return $"\"{c.Value.ToString()}\"";
             }
 
-            throw new Exception($"Operands of type {e.GetType()} and nodeType {e.NodeType} not supported. ");
+            throw new SanityQueryException($"Operands of type {e.GetType()} and nodeType {e.NodeType} not supported. ");
         }
 
         protected static List<string> GetPropertyProjectionList(Type type, int nestingLevel, int maxNestingLevel)

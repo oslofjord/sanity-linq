@@ -128,14 +128,14 @@ namespace Sanity.Linq.BlockContent
             var type = block["_type"]?.ToString();
             if (string.IsNullOrEmpty(type))
             {
-                throw new Exception("Could not convert block to HTML; _type was not defined on block content.");
+                throw new SanityBlockContentException("Could not convert block to HTML; _type was not defined on block content.");
             }
             if (!Serializers.ContainsKey(type))
             {
                 // TODO: Add options for ignoring/skipping specific types.
                 return _htmlBuilderOptions.IgnoreAllUnknownTypes 
                        ? Task.FromResult("") 
-                       : throw new Exception($"No serializer for type '{type}' could be found. Consider providing a custom serializer or setting HtmlBuilderOptions.IgnoreAllUnknownTypes.");
+                       : throw new SanityBlockContentException($"No serializer for type '{type}' could be found. Consider providing a custom serializer or setting HtmlBuilderOptions.IgnoreAllUnknownTypes.");
             }
             return Serializers[type](block, _options, buildContext);
         }

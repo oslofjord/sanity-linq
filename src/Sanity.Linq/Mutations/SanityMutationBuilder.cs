@@ -230,7 +230,7 @@ namespace Sanity.Linq.Mutations
                     throw new ArgumentNullException(nameof(document));
                 }
                 var id = document.SanityId();
-                if (string.IsNullOrEmpty(id)) throw new Exception("Id must be specified when updating document.");
+                if (string.IsNullOrEmpty(id)) throw new InvalidOperationException("Id must be specified when updating document.");
 
                 InnerBuilder.Mutations.Add(new SanityPatchMutation(new SanityPatchById<TDoc>(id) { Set = document, IfRevisionID = document.SanityRevision() }) { DocType = typeof(TDoc) });
                 return this;                
@@ -251,7 +251,7 @@ namespace Sanity.Linq.Mutations
                     throw new ArgumentNullException(nameof(document));
                 }
                 var id = document.SanityId();
-                if (string.IsNullOrEmpty(id)) throw new Exception("Id must be specified when updating document.");
+                if (string.IsNullOrEmpty(id)) throw new InvalidOperationException("Id must be specified when updating document.");
 
                 //InnerBuilder.Mutations.Add(new SanityDeleteByIdMutation(id) { DocType = typeof(TDoc) });
                 InnerBuilder.Mutations.Add(new SanityCreateOrReplaceMutation(document) { DocType = typeof(TDoc) });
@@ -441,7 +441,7 @@ namespace Sanity.Linq.Mutations
                     throw new ArgumentNullException(nameof(document));
                 }
                 var id = document.SanityId();
-                if (string.IsNullOrEmpty(id)) throw new Exception("Id must be specified when updating document.");
+                if (string.IsNullOrEmpty(id)) throw new InvalidOperationException("Id must be specified when updating document.");
 
                 Mutations.Add(new SanityPatchMutation(new SanityPatchById(id) { Set = document, IfRevisionID = document.SanityRevision() }));
                 return this;
@@ -463,7 +463,7 @@ namespace Sanity.Linq.Mutations
                     throw new ArgumentNullException(nameof(document));
                 }
                 var id = document.SanityId();
-                if (string.IsNullOrEmpty(id)) throw new Exception("Id must be specified when updating document.");
+                if (string.IsNullOrEmpty(id)) throw new InvalidOperationException("Id must be specified when updating document.");
 
                 // Mutations.Add(new SanityDeleteByIdMutation(id));
                 // Mutations.Add(new SanityPatchMutation(new SanityPatchById(id) { Set = document, IfRevisionID = document.SanityRevision() }));
@@ -487,7 +487,7 @@ namespace Sanity.Linq.Mutations
                 {
                     throw new ArgumentNullException(nameof(document));
                 }
-                if (string.IsNullOrEmpty(id)) throw new Exception("Id must be specified when updating document.");
+                if (string.IsNullOrEmpty(id)) throw new ArgumentException("Id must be specified when updating document.", nameof(id));
 
                 Mutations.Add(new SanityPatchMutation(new SanityPatchById(id) { Set = document, IfRevisionID = document.SanityRevision() }));
                 return this;

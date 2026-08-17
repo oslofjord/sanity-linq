@@ -150,7 +150,7 @@ namespace Sanity.Linq
                 mutations.Clear();
                 return result;
             }
-            throw new Exception($"No pending changes for document type {typeof(TDoc)}");
+            throw new InvalidOperationException($"No pending changes for document type {typeof(TDoc)}");
         }
 
     }

@@ -50,7 +50,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -67,7 +67,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -84,7 +84,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -101,7 +101,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -118,7 +118,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -135,7 +135,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -152,7 +152,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -169,7 +169,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -188,7 +188,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -206,7 +206,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -223,7 +223,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
@@ -240,7 +240,7 @@ namespace Sanity.Linq
             }
             else
             {
-                throw new Exception("Queryable source must be a SanityDbSet<T>.");
+                throw new ArgumentException("Queryable source must be a SanityDocumentSet<T>.", nameof(source));
             }
         }
 
