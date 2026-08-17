@@ -28,6 +28,7 @@ namespace Sanity.Linq.CommonTypes
             SanityType = "image";
         }
 
+        [Include]
         public SanityReference<SanityImageAsset> Asset { get; set; }
 
         public SanityImageCrop Crop { get; set; }

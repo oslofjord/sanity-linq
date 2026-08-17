@@ -58,21 +58,22 @@ namespace Sanity.Linq
             return null;
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, object objectToSerialize, JsonSerializer serializer)
         {
-            if (value != null)
+            if (objectToSerialize != null)
             {
-                var type = value.GetType();
+                var objectType = objectToSerialize.GetType();
 
                 //Get reference from object
-                var valRef = type.GetProperty("Ref").GetValue(value) as string;
+                var valRef = objectType.GetProperty("Ref").GetValue(objectToSerialize) as string;
+                object objectToSerializePropValue = null;
 
+                var propValue = objectType.GetProperty("Value");
                 // Alternatively, get reference from Id on nested Value
-                if (string.IsNullOrEmpty(valRef))
+                if (string.IsNullOrEmpty(valRef) && propValue != null)
                 {
-                    var propValue = type.GetProperty("Value");
-                    var valValue = propValue.GetValue(value);
-                    if (propValue != null && valValue != null)
+                    var valValue = propValue.GetValue(objectToSerialize);
+                    if (valValue != null)
                     {
                         var valType = propValue.PropertyType;
                         var idProp = valType.GetProperties().FirstOrDefault(p => p.Name.ToLower() == "_id" || ((p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName?.Equals("_id")).GetValueOrDefault());
@@ -83,15 +84,21 @@ namespace Sanity.Linq
                     }
                 }
 
+                if (!string.IsNullOrEmpty(valRef) && propValue != null)
+                {
+                    objectToSerializePropValue = propValue.GetValue(objectToSerialize);
+                }
+
                 // Get _key property (required for arrays in sanity editor)
-                var keyProp = type.GetProperties().FirstOrDefault(p => p.Name.ToLower() == "_key" || ((p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName?.Equals("_key")).GetValueOrDefault());
-                var weakProp = type.GetProperties().FirstOrDefault(p => p.Name.ToLower() == "_weak" || ((p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName?.Equals("_weak")).GetValueOrDefault());
-                var valKey = keyProp?.GetValue(value) as string ?? Guid.NewGuid().ToString();
-                var valWeak = weakProp?.GetValue(value) as bool? ?? null;
+                var keyProp = objectType.GetProperties().FirstOrDefault(p => p.Name.ToLower() == "_key" || ((p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName?.Equals("_key")).GetValueOrDefault());
+                var weakProp = objectType.GetProperties().FirstOrDefault(p => p.Name.ToLower() == "_weak" || ((p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault() as JsonPropertyAttribute)?.PropertyName?.Equals("_weak")).GetValueOrDefault());
+                var valKey = keyProp?.GetValue(objectToSerialize) as string ?? Guid.NewGuid().ToString();
+                var valWeak = weakProp?.GetValue(objectToSerialize) as bool? ?? null;
+
 
                 if (!string.IsNullOrEmpty(valRef))
                 {
-                    serializer.Serialize(writer, new { _ref = valRef, _type = "reference", _key = valKey, _weak = valWeak });
+                    serializer.Serialize(writer, new { _ref = valRef, _type = "reference", _key = valKey, _weak = valWeak, value = objectToSerializePropValue });
                     return;
                 }
             }
