@@ -87,7 +87,7 @@ This file is part of Sanity LINQ (https://github.com/oslofjord/sanity-linq).
 
   <ItemGroup>
 	<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="System.Text.Json" Version="10.0.11" />
   </ItemGroup>
 
 </Project>
